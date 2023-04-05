@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <string>
 
-const int SCREEN_WIDTH = 2048;
-const int SCREEN_HEIGHT = 2048;
+const int SCREEN_WIDTH = 720;
+const int SCREEN_HEIGHT = 540;
 
 bool init();
 bool loadMedia();
