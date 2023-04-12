@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include<SDL2/SDL_mixer.h>
 #include <iostream>
 #include <string>
 
@@ -10,6 +11,11 @@ const int SCREEN_HEIGHT = 600;
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 SDL_Texture* texture = NULL;
+Mix_Music* music = NULL;
+
+bool isPlayingMusic = true; // biến kiểm soát trạng thái phát nhạc
+bool isMusicPaused = false; // biến kiểm soát trạng thái tạm dừng nhạc
+
 
 //Starts up SDL and creates window
 bool init()
@@ -44,6 +50,21 @@ bool init()
         std::cout << "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << std::endl;
         return false;
     }
+    //Initialize SDL
+    if (SDL_Init(SDL_INIT_AUDIO) < 0)
+    {
+        std::cout << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
+        return false;
+    }
+
+    //Initialize SDL_mixer
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+    {
+        std::cout << "SDL_mixer could not initialize! SDL_mixer Error: " << Mix_GetError() << std::endl;
+        return false;
+    }
+
+
 
     return true;
 }
@@ -52,7 +73,7 @@ bool init()
 bool loadMedia()
 {
     //Load PNG image
-    SDL_Surface* loadedSurface = IMG_Load("C:/FisrtGame/BackGround.png");
+    SDL_Surface* loadedSurface = IMG_Load("C:/FirstGame/BackGround.png");
     if(loadedSurface == NULL)
     {
         std::cout << "Unable to load image! SDL Error: " << SDL_GetError() << std::endl;
@@ -66,12 +87,40 @@ bool loadMedia()
         std::cout << "Unable to create texture! SDL Error: " << SDL_GetError() << std::endl;
         return false;
     }
+    //Load music
+    Mix_Music* music = Mix_LoadMUS("C:/FirstGame/SoundTrack.wav");
+    if (music == NULL)
+    {
+        std::cout << "Failed to load music! SDL_mixer Error: " << Mix_GetError() << std::endl;
+        return false;
+    }
 
     //Get rid of old loaded surface
     SDL_FreeSurface(loadedSurface);
-
+    //Play music infinitely
+    Mix_PlayMusic(music, -1);
     return true;
 }
+void PauseMusic()
+{
+    if (Mix_PlayingMusic() == 1) // kiểm tra xem có đang phát nhạc hay không
+    {
+        Mix_PauseMusic(); // tạm dừng nhạc
+        isPlayingMusic = false; // cập nhật biến kiểm soát trạng thái phát nhạc
+        isMusicPaused = true; // cập nhật biến kiểm soát trạng thái tạm dừng nhạc
+    }
+}
+void ResumeMusic()
+{
+    if (isMusicPaused) // kiểm tra xem nhạc đã tạm dừng hay chưa
+    {
+        Mix_ResumeMusic(); // tiếp tục phát nhạc
+        isPlayingMusic = true; // cập nhật biến kiểm soát trạng thái phát nhạc
+        isMusicPaused = false; // cập nhật biến kiểm soát trạng thái tạm dừng nhạc
+    }
+}
+
+
 
 //Frees media and shuts down SDL
 void close()
@@ -87,8 +136,12 @@ void close()
     //Destroy window
     SDL_DestroyWindow(window);
     window = NULL;
+    //Free music and close SDL
+    Mix_FreeMusic(music);
+    music = NULL;
 
     //Quit SDL subsystems
+    Mix_Quit();
     IMG_Quit();
     SDL_Quit();
 }
@@ -106,6 +159,7 @@ int main(int argc, char* argv[])
         std::cout << "Failed to load media!" << std::endl;
         return -1;
     }
+   Mix_PlayMusic(music, -1);
 
     //Main loop flag
     bool quit = false;
@@ -116,14 +170,36 @@ int main(int argc, char* argv[])
     //While application is running
     while(!quit)
     {
+         
+
         //Handle events on queue
         while(SDL_PollEvent(&e) != 0)
         {
             //User requests quit//User requests quit
-if(e.type == SDL_QUIT)
-{
-quit = true;
-}
+            if(e.type == SDL_QUIT)
+            {
+            quit = true;
+            }
+            // nếu nhấn phím p
+            else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_p)
+            {
+                if (isPlayingMusic) // nếu đang phát nhạc
+                {
+                    PauseMusic(); // tạm dừng nhạc
+                }
+                else // nếu đã tạm dừng nhạc
+                {
+                    ResumeMusic(); // tiếp tục phát nhạc
+                }
+            }
+        }
+
+        // nếu đang phát nhạc và nhạc đã kết thúc
+        if (isPlayingMusic && Mix_PlayingMusic() == 0)
+        {
+            Mix_PlayMusic(music, -1); // phát nhạc vô hạn lần
+        }
+                
 
 //Clear screen
 SDL_RenderClear(renderer);
@@ -133,7 +209,7 @@ SDL_RenderCopy(renderer, texture, NULL, NULL);
 
 //Update screen
 SDL_RenderPresent(renderer);
-}}
+}
 close();
 
 return 0;
