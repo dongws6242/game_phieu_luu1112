@@ -12,6 +12,11 @@ SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 SDL_Texture* texture = NULL;
 Mix_Music* music = NULL;
+SDL_Surface* startButtonSurface = NULL;
+SDL_Texture* exitButtonTexture = NULL;
+SDL_Texture* startButtonTexture = NULL;
+SDL_Surface* exitButtonSurface = NULL;
+
 
 bool isPlayingMusic = true; // biến kiểm soát trạng thái phát nhạc
 bool isMusicPaused = false; // biến kiểm soát trạng thái tạm dừng nhạc
@@ -94,9 +99,39 @@ bool loadMedia()
         std::cout << "Failed to load music! SDL_mixer Error: " << Mix_GetError() << std::endl;
         return false;
     }
+    SDL_Surface* startButtonSurface = IMG_Load("C:/FirstGame/StartButton.png");
+    if(startButtonSurface == NULL ){
+        std :: cout << "failed : " <<SDL_GetError() << std::  endl;
+        return false; 
+    }
+    //Create texture from surface pixels
+        startButtonTexture = SDL_CreateTextureFromSurface(renderer, startButtonSurface);
+     if(startButtonTexture == NULL)
+    {
+        std::cout << "Unable to create texture! SDL Error: " << SDL_GetError() << std::endl;
+        return false;
+    }
+    
+    SDL_Surface* exitButtonSurface = IMG_Load("C:/FirstGame/ExitButton.png");
+     if(exitButtonSurface == NULL ){
+        std :: cout << "failed : " <<SDL_GetError() << std::  endl;
+        return false; 
+    }
+    //Create texture from surface pixels
+        exitButtonTexture = SDL_CreateTextureFromSurface(renderer, exitButtonSurface);
+     if(exitButtonTexture == NULL)
+    {
+        std::cout << "Unable to create texture! SDL Error: " << SDL_GetError() << std::endl;
+        return false;
+    }
 
+
+    
     //Get rid of old loaded surface
     SDL_FreeSurface(loadedSurface);
+    SDL_FreeSurface(startButtonSurface);
+    SDL_FreeSurface(exitButtonSurface);
+
     //Play music infinitely
     Mix_PlayMusic(music, -1);
     return true;
@@ -136,6 +171,10 @@ void close()
     //Destroy window
     SDL_DestroyWindow(window);
     window = NULL;
+    SDL_DestroyTexture(startButtonTexture);
+    startButtonTexture = NULL;
+    SDL_DestroyTexture(exitButtonTexture);
+    exitButtonTexture = NULL;
     //Free music and close SDL
     Mix_FreeMusic(music);
     music = NULL;
@@ -169,7 +208,20 @@ int main(int argc, char* argv[])
 
     //While application is running
     while(!quit)
-    {
+    {        // Khai báo biến cho nút "Start Game"
+                SDL_Rect startButtonRect;
+                startButtonRect.x = SCREEN_WIDTH/2 ;    // Tọa độ x
+                startButtonRect.y = SCREEN_HEIGHT/2 + 45 ;    // Tọa độ y
+                startButtonRect.w = 200;    // Chiều rộng
+                startButtonRect.h = 50;     // Chiều cao
+
+                // Khai báo biến cho nút "Exit Game"
+                SDL_Rect exitButtonRect;
+                exitButtonRect.x = SCREEN_WIDTH/2 ;     // Tọa độ x
+                exitButtonRect.y = SCREEN_HEIGHT/2 + 110;     // Tọa độ y
+                exitButtonRect.w = 200;     // Chiều rộng
+                exitButtonRect.h = 50;      // Chiều cao
+
          
 
         //Handle events on queue
@@ -192,6 +244,27 @@ int main(int argc, char* argv[])
                     ResumeMusic(); // tiếp tục phát nhạc
                 }
             }
+                
+
+                
+            if (e.type == SDL_MOUSEBUTTONDOWN)
+        {
+            // Lấy vị trí chuột
+            int mouseX, mouseY;
+            SDL_GetMouseState(&mouseX, &mouseY);
+
+            
+            // Kiểm tra xem chuột có nằm trên nút "Exit Game" không
+            if (mouseX >= exitButtonRect.x && mouseX <= exitButtonRect.x + exitButtonRect.w && mouseY >= exitButtonRect.y && mouseY <= exitButtonRect.y + exitButtonRect.h)
+            {
+                // Thực hiện chức năng của nút "Exit Game"
+                quit = true;
+            }
+        }    
+
+
+
+
         }
 
         // nếu đang phát nhạc và nhạc đã kết thúc
@@ -201,14 +274,17 @@ int main(int argc, char* argv[])
         }
                 
 
-//Clear screen
-SDL_RenderClear(renderer);
+        //Clear screen
+        SDL_RenderClear(renderer);
 
-//Render texture to screen
-SDL_RenderCopy(renderer, texture, NULL, NULL);
+        //Render texture to screen
+        SDL_RenderCopy(renderer, texture, NULL, NULL);
+        // Hiển thị các nút menu
+        SDL_RenderCopy(renderer, startButtonTexture, NULL, &startButtonRect);
+        SDL_RenderCopy(renderer, exitButtonTexture, NULL, &exitButtonRect);
 
-//Update screen
-SDL_RenderPresent(renderer);
+        //Update screen
+        SDL_RenderPresent(renderer);
 }
 close();
 
