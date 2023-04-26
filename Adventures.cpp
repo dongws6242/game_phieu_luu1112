@@ -18,8 +18,11 @@ SDL_Surface* startButtonSurface = NULL;
 SDL_Texture* exitButtonTexture = NULL;
 SDL_Texture* startButtonTexture = NULL;
 SDL_Surface* exitButtonSurface = NULL;
- SDL_Surface* mainPgSurface = NULL;
- SDL_Texture* mainPgTexture1 = NULL;
+
+//Xoay nhân vật
+    bool isMoving; 
+//Test Va chạm
+    bool isTest;
 
 class Mixer1 {
     public:
@@ -72,7 +75,7 @@ bool Mixer1::initAudio()
 bool Mixer1::loadAudio()
 {
      //Load music
-    Mix_Music* music = Mix_LoadMUS("C:/FirstGame/SoundTrack.wav");
+    Mix_Music* music = Mix_LoadMUS("C:/FirstGame/Sound/SoundTrack.wav");
     if (music == NULL)
     {
         std::cout << "Failed to load music! SDL_mixer Error: " << Mix_GetError() << std::endl;
@@ -163,8 +166,6 @@ class animation {
 		//Renders texture at given point
 		void render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
 
-
-
         void close();
 
 		//Gets image dimensions
@@ -174,16 +175,20 @@ class animation {
 	private:
 		//The actual hardware texture
 		SDL_Texture* mAnimation;
-
+          
 		//Image dimensions
 		int mWidth;
 		int mHeight;
+
+        
 };
 
-        //Walking animation
-        const int WALKING_ANIMATION_FRAMES = 8;
-        SDL_Rect gSpriteClips[ WALKING_ANIMATION_FRAMES ];
-        animation gSpriteSheetTexture;
+//Walking animation
+const int WALKING_ANIMATION_FRAMES = 8;
+SDL_Rect gSpriteClips[ WALKING_ANIMATION_FRAMES ];
+
+ animation gSpriteSheetTexture;
+ animation Map1;
 animation::animation()
 {
 	//Initialize
@@ -271,19 +276,32 @@ void animation::setAlpha( Uint8 alpha )
 }
 
 void animation::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip)
-{//Set rendering space and render to screen
-	SDL_Rect renderQuad = { x, y, mWidth, mHeight };
+{
+    // Set rendering space and render to screen
+    SDL_Rect renderQuad = { x, y, mWidth, mHeight };
 
-	//Set clip rendering dimensions
-	if( clip != NULL )
-	{
-		renderQuad.w = clip->w;
-		renderQuad.h = clip->h;
-	}
-
-	//Render to screen
-	SDL_RenderCopyEx( renderer, mAnimation, clip, &renderQuad, angle, center, flip );
+    // Set clip rendering dimensions
+    if (clip != NULL) {
+        renderQuad.w = clip->w;
+        renderQuad.h = clip->h;
     }
+
+    // Determine flip direction based on current direction
+    SDL_RendererFlip flipDirection = SDL_FLIP_NONE;
+    if (isMoving) { // Nếu nhân vật đang di chuyển
+        if (flip == SDL_FLIP_NONE) { // Nếu nhân vật đang quay về phía bên phải
+            flipDirection = SDL_FLIP_HORIZONTAL; // Quay nhân vật về phía bên trái
+        } else if (flip == SDL_FLIP_HORIZONTAL) { // Nếu nhân vật đang quay về phía bên trái
+            flipDirection = SDL_FLIP_NONE; // Quay nhân vật về phía bên phải
+        }
+    } else { // Nếu nhân vật đang đứng yên
+        flipDirection = flip; // Giữ nguyên hướng quay hiện tại của nhân vật
+    }
+
+    // Render to screen
+    SDL_RenderCopyEx(renderer, mAnimation, clip, &renderQuad, angle, center, flipDirection);
+}
+
 
 
 int animation::getWidth()
@@ -321,7 +339,7 @@ bool init()
         return false;
     }
 
-    //Initialize PNG loading
+    //Initialize PNG loading (Tải ảnh PNG)
     int imgFlags = IMG_INIT_PNG;
     if(!(IMG_Init(imgFlags) & imgFlags))
     {
@@ -343,8 +361,16 @@ bool init()
 		gSpriteClips[ i ].h = 128;
     }
 	}
+    	//Load background texture
+	if( !Map1.loadAnimation( "C:/FirstGame/Picture/Map1.png" ) )
+	{
+		printf( "Failed to load background texture!\n" );
+		return  false;
+	}
+
     return true;
 }
+enum class Direction { LEFT, RIGHT, DOWN,UP};
 
 class Figure {
      public:
@@ -367,12 +393,20 @@ class Figure {
 		//Shows the dot on the screen
 		void render();
 
+        //CreateMazeObject
+        void CreateMaze(int level);
+
     private:
 		//The X and Y offsets of the dot
 		int mPosX, mPosY;
 
 		//The velocity of the dot
 		int mVelX, mVelY;
+
+        //Collider 
+        SDL_Rect mFigure;
+
+
 };
 
 Figure::Figure()
@@ -381,11 +415,13 @@ Figure::Figure()
     mPosX = -18;
     mPosY = -50;
 
+	//Nhân vật
+	mFigure.w = FIGURE_WIDTH;
+	mFigure.h = FIGURE_HEIGHT;
     //Initialize the velocity
     mVelX = 0;
     mVelY = 0;
 }
-
 void Figure::handleEvent( SDL_Event& e )
 {
     //If a key was pressed
@@ -396,8 +432,12 @@ void Figure::handleEvent( SDL_Event& e )
         {
             case SDLK_UP: mVelY -= FIGURE_VEL;  break;
             case SDLK_DOWN: mVelY += FIGURE_VEL;  break;
-            case SDLK_LEFT: mVelX -= FIGURE_VEL;  break;
-            case SDLK_RIGHT: mVelX += FIGURE_VEL;  break;
+            case SDLK_LEFT: mVelX -= FIGURE_VEL;
+                    isMoving = true; // Cập nhật giá trị của thuộc tính isMoving
+                    break;
+            case SDLK_RIGHT: mVelX += FIGURE_VEL;
+                     isMoving = false;
+              break;
         }
     }
     //If a key was released
@@ -413,19 +453,87 @@ void Figure::handleEvent( SDL_Event& e )
         }
     }
 }
-// Set the current frame to the first frame of the animation
-int currentFrame = 0;
+bool checkCollision(SDL_Rect a, SDL_Rect b[], int numWalls)
+{
+    for (int i = 0; i < numWalls; i++)
+    {
+        SDL_Rect currentWall = b[i];
+
+        // The sides of the rectangles
+        int leftA, leftB;
+        int rightA, rightB;
+        int topA, topB;
+        int bottomA, bottomB;
+
+        // Calculate the sides of rect A
+        leftA = a.x;
+        rightA = a.x + a.w;
+        topA = a.y;
+        bottomA = a.y + a.h;
+
+        // Calculate the sides of rect B
+        leftB = currentWall.x;
+        rightB = currentWall.x + currentWall.w;
+        topB = currentWall.y;
+        bottomB = currentWall.y + currentWall.h;
+
+        // If any of the sides from A are outside of B
+        if (bottomA <= topB)
+        {
+            continue;
+        }
+
+        if (topA >= bottomB)
+        {
+            continue;
+        }
+
+        if (rightA <= leftB)
+        {
+            continue;
+        }
+
+        if (leftA >= rightB)
+        {
+            continue;
+        }
+
+        // If none of the sides from A are outside B
+        return true;
+    }
+
+    // If we get here, there is no collision
+    return false;
+}
+
+
+int currentFrame =0;
 
 void Figure::move()
 {
+     // Tạo tường thẳng đứng
+        SDL_Rect WallOy[3];
+        WallOy[0] = {SCREEN_WIDTH / 6 - 4 , SCREEN_HEIGHT / 4, 1, SCREEN_HEIGHT / 4};
+        WallOy[1] = {SCREEN_WIDTH / 3, 0, 1, SCREEN_HEIGHT / 2};
+        WallOy[2] = {SCREEN_WIDTH * 3 / 4, SCREEN_HEIGHT / 4 - 29, 1, SCREEN_HEIGHT / 2 + 30};
+
+        // Tao đường thẳng nằm ngang
+        SDL_Rect WallOx[4];
+        WallOx[0] = {0, SCREEN_HEIGHT / 4, SCREEN_HEIGHT / 6 + 45, 1};
+        WallOx[1] = { 64 + SCREEN_WIDTH / 4, SCREEN_HEIGHT / 8 + 50, SCREEN_WIDTH / 6 , 1};
+        WallOx[2] = {SCREEN_WIDTH * 7 / 10, SCREEN_HEIGHT / 5, SCREEN_HEIGHT / 6, 1};
+        WallOx[3] = {0, SCREEN_HEIGHT * 3 / 4, SCREEN_WIDTH * 3 / 4 + 45, 1};
+
     // Move the dot left or right
-    mPosX += mVelX;
+    mPosX += mVelX * FIGURE_VEL;
+    mFigure.x = mPosX;
 
     // If the dot went too far to the left or right
-    if( ( mPosX + FIGURE_WIDTH/3 - 15 < 0 ) || ( mPosX + FIGURE_WIDTH/2 > SCREEN_WIDTH ) )
+    if( ( mPosX + FIGURE_WIDTH/3 - 15 < 0 ) || ( mPosX + FIGURE_WIDTH/2 > SCREEN_WIDTH )  )
     {
         // Move back
-        mPosX -= mVelX;
+        mPosX -= mVelX * FIGURE_VEL;
+        mFigure.x = mPosX;
     }
     else
     {
@@ -443,27 +551,79 @@ void Figure::move()
     }
 
     // Move the dot up or down
-    mPosY += mVelY;
+    mPosY += mVelY * FIGURE_VEL;
+    mFigure.y = mPosY;
 
     // If the dot went too far up or down
-    if( ( mPosY + FIGURE_HEIGHT/2 - 10 < 0 ) || ( mPosY + FIGURE_HEIGHT > SCREEN_HEIGHT ) )
+    if( ( mPosY + FIGURE_HEIGHT/2 - 10 < 0 ) || ( mPosY + FIGURE_HEIGHT > SCREEN_HEIGHT )  )
     {
         // Move back
-        mPosY -= mVelY;
+        mPosY -= mVelY * FIGURE_VEL;
+        mFigure.y = mPosY;
+    } else{
+            if( mVelY > 0 )
+                {
+                    // Moving down, so update the frame to the next frame in the animation
+                    currentFrame = ( currentFrame + 1 ) % (WALKING_ANIMATION_FRAMES );
+                }
+                else if( mVelY < 0 )
+                {
+                    // Moving up, so update the frame to the previous frame in the animation
+                    currentFrame = ( currentFrame - 1 + WALKING_ANIMATION_FRAMES  ) % (WALKING_ANIMATION_FRAMES );
+                }
+
     }
+
+if (checkCollision(mFigure,WallOx,4) == true  or checkCollision(mFigure,WallOy,3) == true ){
+    isTest = true;
 }
+
+}
+
+
 
 void Figure::render(){
     // Render the sprite using the current frame
     gSpriteSheetTexture.render( mPosX, mPosY, &gSpriteClips[ currentFrame ] );
     }
+void Figure::CreateMaze(int level) {
+    if (level == 1) {
+        // Tạo tường thẳng đứng
+        SDL_Rect WallOy[3];
+        WallOy[0] = {SCREEN_WIDTH / 6 - 4 , SCREEN_HEIGHT / 4, 1, SCREEN_HEIGHT  / 4};
+        WallOy[1] = {SCREEN_WIDTH / 3, 0, 1, (SCREEN_HEIGHT -64) / 2};
+        WallOy[2] = {SCREEN_WIDTH * 3 / 4, SCREEN_HEIGHT / 4 - 29, 1, SCREEN_HEIGHT / 2 + 30};
+
+        // Tao đường thẳng nằm ngang
+        SDL_Rect WallOx[4];
+        WallOx[0] = {0, SCREEN_HEIGHT / 4, SCREEN_HEIGHT / 6 + 45, 1};
+        WallOx[1] = {  64 + SCREEN_WIDTH / 4, SCREEN_HEIGHT / 8 +50 , SCREEN_WIDTH / 6, 1};
+        WallOx[2] = {SCREEN_WIDTH * 7 / 10, SCREEN_HEIGHT / 5, SCREEN_HEIGHT / 6, 1};
+        WallOx[3] = {0, SCREEN_HEIGHT * 3 / 4, SCREEN_WIDTH * 3 / 4 + 45, 1};
+
+        // Đặt màu vẽ thành màu đỏ
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+
+        for (int i = 0; i < 3; i++) {
+            SDL_RenderDrawRect(renderer, &WallOy[i]);
+            SDL_RenderDrawRect(renderer, &WallOx[i]);
+        }
+        SDL_RenderDrawRect(renderer, &WallOx[3]);
+
+        // Đặt lại màu vẽ ban đầu
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+        SDL_RenderPresent(renderer);
+    }
+}
+
 
 
 //Loads media
 bool loadMedia()
 {
     //Load PNG image
-    SDL_Surface* loadedSurface = IMG_Load("C:/FirstGame/BackGround.png");
+    SDL_Surface* loadedSurface = IMG_Load("C:/FirstGame/Picture/BackGround.png");
     if(loadedSurface == NULL)
     {
         std::cout << "Unable to load image! SDL Error: " << SDL_GetError() << std::endl;
@@ -477,7 +637,7 @@ bool loadMedia()
         std::cout << "Unable to create texture! SDL Error: " << SDL_GetError() << std::endl;
         return false;
     }
-    SDL_Surface* startButtonSurface = IMG_Load("C:/FirstGame/StartButton.png");
+    SDL_Surface* startButtonSurface = IMG_Load("C:/FirstGame/Picture/StartButton.png");
     if(startButtonSurface == NULL ){
         std :: cout << "failed : " <<SDL_GetError() << std::  endl;
         return false; 
@@ -490,7 +650,7 @@ bool loadMedia()
         return false;
     }
     
-    SDL_Surface* exitButtonSurface = IMG_Load("C:/FirstGame/ExitButton.png");
+    SDL_Surface* exitButtonSurface = IMG_Load("C:/FirstGame/Picture/ExitButton.png");
      if(exitButtonSurface == NULL ){
         std :: cout << "failed : " <<SDL_GetError() << std::  endl;
         return false; 
@@ -502,21 +662,11 @@ bool loadMedia()
         std::cout << "Unable to create texture! SDL Error: " << SDL_GetError() << std::endl;
         return false;
     }
-    SDL_Surface* mainPgSurface = IMG_Load("C:/FirstGame/yugioh.png");
-    if(mainPgSurface == NULL){
-        std :: cout << "failed : " << SDL_GetError() << std :: endl;
-    }
-    mainPgTexture1 = SDL_CreateTextureFromSurface(renderer, mainPgSurface);
-    if(mainPgTexture1 == NULL)
-    {
-        std::cout << "Unable to create texture! SDL Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
+
     //Get rid of old loaded surface
     SDL_FreeSurface(loadedSurface);
     SDL_FreeSurface(startButtonSurface);
     SDL_FreeSurface(exitButtonSurface);
-    SDL_FreeSurface(mainPgSurface);
     return true;
 }
 //Frees media and shuts down SDL
@@ -537,10 +687,9 @@ void close()
     startButtonTexture = NULL;
     SDL_DestroyTexture(exitButtonTexture);
     exitButtonTexture = NULL;
-    SDL_DestroyTexture(mainPgTexture1);
-    mainPgTexture1 = NULL;
     //Free loaded images
 	gSpriteSheetTexture.free();
+    Map1.free();
     //Quit SDL subsystems
     Mix_Quit();
     IMG_Quit();
@@ -609,38 +758,67 @@ int main(int argc, char* argv[])
             SDL_GetMouseState(&mouseX, &mouseY);
             if (mouseX >= startButtonRect.x && mouseX <= startButtonRect.x + startButtonRect.w && mouseY >= startButtonRect.y && mouseY <= startButtonRect.y + startButtonRect.h)
             {
-                bool quit1 = false;
+               bool quit1 = false;
                 SDL_Event e1;
-
-                Uint32 frame_start_time;
-                int frame_time;
-
                 Figure figure;
+                // The background scrolling offset
+                int scrollingOffset = 0;
 
                 while (!quit1) {
+                    figure.CreateMaze(1);
+
+                    // Xử lý sự kiện
                     while (SDL_PollEvent(&e1) != 0) {
                         if (e1.type == SDL_QUIT) {
                             quit1 = true;
+                            isTest = true;
                         }
-                        //Handle input for the dot
-					figure.handleEvent( e1 );
+                        // Xử lý sự kiện cho đối tượng figure
+                        figure.handleEvent(e1);
                     }
+
+                    // Di chuyển đối tượng figure
                     figure.move();
 
-                    // Vẽ lại màn hình ở đây
-                    SDL_SetRenderDrawColor( renderer, 0xFF, 0xFF, 0xFF, 0xFF );
-                    SDL_RenderClear( renderer );
-                    figure.render();
-                    
-                    //Update screen
-                    SDL_RenderPresent( renderer );                
-                        // Giới hạn tốc độ khung hình
-                        frame_time = SDL_GetTicks() - frame_start_time;
-                        if (frame_time < FRAME_TIME) {
-                            SDL_Delay(FRAME_TIME - frame_time);
-                        }
-            
+                    // Scroll background
+                    --scrollingOffset;
+                    if (scrollingOffset < -Map1.getWidth()) {
+                        scrollingOffset = 0;
                     }
+
+                    // Clear screen
+                    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+                    SDL_RenderClear(renderer);
+
+                    // Render background
+                    int bg_width = Map1.getWidth();
+
+                    // Vẽ background nhiều lần để đủ chiều dài của cửa sổ hiển thị
+                    while (scrollingOffset < SCREEN_WIDTH) {
+                        Map1.render(scrollingOffset, 0);
+                        scrollingOffset += bg_width;
+                    }
+
+                    // Đặt lại giá trị scrollingOffset nếu đã vượt quá chiều dài của texture
+                    if (scrollingOffset >= SCREEN_WIDTH) {
+                        scrollingOffset -= bg_width;
+                    }
+
+                    // Vẽ background tiếp theo để che phủ toàn bộ màn hình
+                    Map1.render(scrollingOffset + bg_width, 0);
+
+                    // Vẽ các đối tượng khác lên renderer
+                    figure.render();
+
+                    // Cập nhật renderer
+                    SDL_RenderPresent(renderer);
+
+                    // Kiểm tra điều kiện thoát vòng lặp
+                    quit1 = isTest;
+                }
+
+                isTest = false;
+
                 
              }
            
