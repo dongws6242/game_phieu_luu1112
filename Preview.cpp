@@ -2,156 +2,37 @@
 #include <SDL2/SDL_image.h>
 #include <iostream>
 #include <string>
-#include<SDL2/SDL_mixer.h>
+#include"mixergame.h"
+
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 900;
 const int SCREEN_HEIGHT = 600;
 
-const int FPS = 60;
-const int FRAME_TIME = 1000 / FPS;
-
+// Khai báo biến cho nút "Start Game"
+SDL_Rect startButtonRect ;
+ // Khai báo biến cho nút "Exit Game"
+SDL_Rect exitButtonRect;
+               
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
-SDL_Texture* texture = NULL;
-SDL_Surface* startButtonSurface = NULL;
-SDL_Texture* exitButtonTexture = NULL;
-SDL_Texture* startButtonTexture = NULL;
-SDL_Surface* exitButtonSurface = NULL;
- SDL_Texture* Map1 = NULL;
 
 //Xoay nhân vật
     bool isMoving; 
 //Test Va chạm
     bool isTest;
 
-class Mixer1 {
-    public:
-     
-        // Initializes variables
-        Mixer1();
 
-        // Deallocates memory
-        ~Mixer1();
-        Mix_Music* music = NULL;
-        static bool isPlayingMusic;  // biến kiểm soát trạng thái phát nhạc
-        static bool isMusicPaused;  // biến kiểm soát trạng thái tạm dừng nhạc
-
-        bool initAudio();
-        bool loadAudio();
-        void PauseMusic();
-        void ResumeMusic();
-		void closeMusic();
-		void PlayMusic();
-		void PlayMusicN();
-        void playmusic1();
-       
-};
-bool Mixer1::isPlayingMusic = true; // khởi tạo biến static
-bool Mixer1::isMusicPaused = false; // khởi tạo biến static
-
-Mixer1::Mixer1()   
-{
-     }
-    Mixer1::~Mixer1(){
-        closeMusic();
-    }
-bool Mixer1::initAudio()
-{
-    //Initialize SDL
-    if (SDL_Init(SDL_INIT_AUDIO) < 0)
-    {
-        std::cout << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
-    //Initialize SDL_mixer
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
-    {
-        std::cout << "SDL_mixer could not initialize! SDL_mixer Error: " << Mix_GetError() << std::endl;
-        return false;
-    }
-    return true;
-}
-
-bool Mixer1::loadAudio()
-{
-     //Load music
-    Mix_Music* music = Mix_LoadMUS("C:/FirstGame/Sound/SoundTrack.wav");
-    if (music == NULL)
-    {
-        std::cout << "Failed to load music! SDL_mixer Error: " << Mix_GetError() << std::endl;
-        return false;
-    }
-    //Play music infinitely
-    Mix_PlayMusic(music, -1);
-    return true;
-}
-
-void Mixer1::PauseMusic()
-{
-     if (Mix_PlayingMusic() == 1) // kiểm tra xem có đang phát nhạc hay không
-    {
-        Mix_PauseMusic(); // tạm dừng nhạc
-        isPlayingMusic = false; // cập nhật biến kiểm soát trạng thái phát nhạc
-        isMusicPaused = true; // cập nhật biến kiểm soát trạng thái tạm dừng nhạc
-    }
-}
-
-void Mixer1::ResumeMusic()
-{
-   if (isMusicPaused) // kiểm tra xem nhạc đã tạm dừng hay chưa
-    {
-        Mix_ResumeMusic(); // tiếp tục phát nhạc
-        isPlayingMusic = true; // cập nhật biến kiểm soát trạng thái phát nhạc
-        isMusicPaused = false; // cập nhật biến kiểm soát trạng thái tạm dừng nhạc
-    }
-}
-void Mixer1::closeMusic()
-{
-    //Free music and close SDL
-    if (music != NULL)
-    {
-        Mix_FreeMusic(music);
-        music = NULL;
-    }
-    Mix_CloseAudio();
-    
-}
-
-void Mixer1::PlayMusic()
-{
-    
-                if (isPlayingMusic) // nếu đang phát nhạc
-                {
-                    PauseMusic(); // tạm dừng nhạc
-                }
-                else // nếu đã tạm dừng nhạc
-                {
-                    ResumeMusic(); // tiếp tục phát nhạc
-                }
-}
-
-void Mixer1::PlayMusicN(){
-    // nếu đang phát nhạc và nhạc đã kết thúc
-        if (isPlayingMusic && Mix_PlayingMusic() == 0)
-        {
-            Mix_PlayMusic(music, -1); // phát nhạc vô hạn lần
-        }
-}
-void Mixer1::playmusic1(){
-     Mix_PlayMusic(music, -1);
-}
-
-class animation {
+class LTexture {
     public:
 		//Initializes variables
-		animation();
+		LTexture();
 
 		//Deallocates memory
-		~animation();
+		~LTexture();
 
 		//Loads image at specified path
-		bool loadAnimation( std::string path );
+		bool loadTexture( std::string path );
 		//Deallocates texture
 		void free();
 
@@ -166,6 +47,9 @@ class animation {
 		
 		//Renders texture at given point
 		void render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
+        void renderBackground();
+        void renderMenuStart();
+        void renderMenuExit();
 
         void close();
 
@@ -175,7 +59,7 @@ class animation {
 
 	private:
 		//The actual hardware texture
-		SDL_Texture* mAnimation;
+		SDL_Texture* mTexture;
           
 		//Image dimensions
 		int mWidth;
@@ -187,94 +71,98 @@ class animation {
 //Walking animation
 const int WALKING_ANIMATION_FRAMES = 8;
 SDL_Rect gSpriteClips[ WALKING_ANIMATION_FRAMES ];
- animation gSpriteSheetTexture;
-animation::animation()
+
+ LTexture gSpriteSheetTexture;
+ LTexture Map1;
+ LTexture BackGroundTexture;
+ LTexture MenuStartTexture;
+ LTexture MenuExitTexture;
+LTexture::LTexture()
 {
 	//Initialize
-	mAnimation = NULL;
+	mTexture = NULL;
 	mWidth = 0;
 	mHeight = 0;
 }
 
-animation::~animation()
+LTexture::~LTexture()
 {
 	//Deallocate
 	free();
 }
 
-bool animation::loadAnimation( std::string path )
+bool LTexture::loadTexture( std::string path )
 {
 	//Get rid of preexisting texture
 	free();
 
 	//The final texture
-	SDL_Texture* newAnimation = NULL;
+	SDL_Texture* newTexture = NULL;
 
 	//Load image at specified path
-	SDL_Surface* loadAnimation = IMG_Load( path.c_str() );
-	if( loadAnimation == NULL )
+	SDL_Surface* loadTexture = IMG_Load( path.c_str() );
+	if( loadTexture == NULL )
 	{
 		printf( "Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError() );
 	}
 	else
 	{
 		//Color key image
-		SDL_SetColorKey( loadAnimation, SDL_TRUE, SDL_MapRGB( loadAnimation->format, 0, 0xFF, 0xFF ) );
+		SDL_SetColorKey( loadTexture, SDL_TRUE, SDL_MapRGB( loadTexture->format, 0, 0xFF, 0xFF ) );
 
 		//Create texture from surface pixels
-        newAnimation = SDL_CreateTextureFromSurface( renderer, loadAnimation );
-		if( newAnimation == NULL )
+        newTexture = SDL_CreateTextureFromSurface( renderer, loadTexture );
+		if( newTexture == NULL )
 		{
 			printf( "Unable to create texture from %s! SDL Error: %s\n", path.c_str(), SDL_GetError() );
 		}
 		else
 		{
 			//Get image dimensions
-			mWidth = loadAnimation->w;
-			mHeight = loadAnimation->h;
+			mWidth = loadTexture->w;
+			mHeight = loadTexture->h;
 		}
 
-
 		//Get rid of old loaded surface
-		SDL_FreeSurface( loadAnimation );
+		SDL_FreeSurface( loadTexture );
 	}
 
 	//Return success
-	mAnimation = newAnimation;
-	return mAnimation != NULL;
+	mTexture = newTexture;
+	return mTexture != NULL;
 }
 
-void animation::free()
+void LTexture::free()
 {
 	//Free texture if it exists
-	if( mAnimation != NULL )
+	if( mTexture != NULL )
 	{
-		SDL_DestroyTexture( mAnimation );
-		mAnimation = NULL;
+		SDL_DestroyTexture( mTexture );
+		mTexture = NULL;
 		mWidth = 0;
 		mHeight = 0;
 	}
 }
 
-void animation::setColor( Uint8 red, Uint8 green, Uint8 blue )
+void LTexture::setColor( Uint8 red, Uint8 green, Uint8 blue )
 {
 	//Modulate texture rgb
-	SDL_SetTextureColorMod( mAnimation, red, green, blue );
+	SDL_SetTextureColorMod( mTexture, red, green, blue );
 }
 
-void animation::setBlendMode( SDL_BlendMode blending )
+void LTexture::setBlendMode( SDL_BlendMode blending )
 {
 	//Set blending function
-	SDL_SetTextureBlendMode( mAnimation, blending );
+	SDL_SetTextureBlendMode( mTexture, blending );
 }
 		
-void animation::setAlpha( Uint8 alpha )
+void LTexture::setAlpha( Uint8 alpha )
 {
 	//Modulate texture alpha
-	SDL_SetTextureAlphaMod( mAnimation, alpha );
+	SDL_SetTextureAlphaMod( mTexture, alpha );
 }
 
-void animation::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip)
+void LTexture::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip)
 {
     // Set rendering space and render to screen
     SDL_Rect renderQuad = { x, y, mWidth, mHeight };
@@ -298,17 +186,28 @@ void animation::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* ce
     }
 
     // Render to screen
-    SDL_RenderCopyEx(renderer, mAnimation, clip, &renderQuad, angle, center, flipDirection);
+    SDL_RenderCopyEx(renderer, mTexture, clip, &renderQuad, angle, center, flipDirection);
 }
 
+void LTexture::renderBackground(){
+    SDL_RenderCopy(renderer, mTexture, NULL,NULL);
+}
 
+void LTexture::renderMenuStart(){
+        // Hiển thị các nút menu
+        SDL_RenderCopy(renderer, mTexture, NULL, &startButtonRect);
+}
+void LTexture::renderMenuExit(){
+             SDL_RenderCopy(renderer, mTexture, NULL, &exitButtonRect);
 
-int animation::getWidth()
+}
+
+int LTexture::getWidth()
 {
 	return mWidth;
 }
 
-int animation::getHeight()
+int LTexture::getHeight()
 {
 	return mHeight;
 }
@@ -347,7 +246,7 @@ bool init()
     }
     
     //Load sprite sheet texture
-	if( !gSpriteSheetTexture.loadAnimation( "C:/FirstGame/Adventures_figure/Walk.png" ) )
+	if( !gSpriteSheetTexture.loadTexture( "C:/FirstGame/Adventures_figure/Walk.png" ) )
 	{
 		printf( "Failed to load walking animation texture!\n" );
 		return false; }
@@ -360,9 +259,30 @@ bool init()
 		gSpriteClips[ i ].h = 128;
     }
 	}
+    	//Load background texture
+	if( !Map1.loadTexture( "C:/FirstGame/Picture/Map1.png" ) )
+	{
+		printf( "Failed to load Map texture!\n" );
+		return  false;
+	}
+    if (!BackGroundTexture.loadTexture( "C:/FirstGame/Picture/Background.png"))
+    {
+        printf( "Failed to load background texture!\n" );
+        return false;
+    }
+     if (!MenuStartTexture.loadTexture( "C:/FirstGame/Picture/StartButton.png"))
+    {
+        printf( "Failed to load background texture!\n" );
+        return false;
+    }
+     if (!MenuExitTexture.loadTexture( "C:/FirstGame/Picture/ExitButton.png"))
+    {
+        printf( "Failed to load background texture!\n" );
+        return false;
+    }
+
     return true;
 }
-enum class Direction { LEFT, RIGHT, DOWN,UP};
 
 class Figure {
      public:
@@ -609,80 +529,9 @@ void Figure::CreateMaze(int level) {
     }
 }
 
-
-
-//Loads media
-bool loadMedia()
-{
-    //Load PNG image
-    SDL_Surface* loadedSurface = IMG_Load("C:/FirstGame/Picture/BackGround.png");
-    if(loadedSurface == NULL)
-    {
-        std::cout << "Unable to load image! SDL Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
-
-    //Create texture from surface pixels
-    texture = SDL_CreateTextureFromSurface(renderer, loadedSurface);
-    if(texture == NULL)
-    {
-        std::cout << "Unable to create texture! SDL Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
-    SDL_Surface* startButtonSurface = IMG_Load("C:/FirstGame/Picture/StartButton.png");
-    if(startButtonSurface == NULL ){
-        std :: cout << "failed : " <<SDL_GetError() << std::  endl;
-        return false; 
-    }
-    //Create texture from surface pixels
-        startButtonTexture = SDL_CreateTextureFromSurface(renderer, startButtonSurface);
-     if(startButtonTexture == NULL)
-    {
-        std::cout << "Unable to create texture! SDL Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
-    
-    SDL_Surface* exitButtonSurface = IMG_Load("C:/FirstGame/Picture/ExitButton.png");
-     if(exitButtonSurface == NULL ){
-        std :: cout << "failed : " <<SDL_GetError() << std::  endl;
-        return false; 
-    }
-    //Create texture from surface pixels
-        exitButtonTexture = SDL_CreateTextureFromSurface(renderer, exitButtonSurface);
-     if(exitButtonTexture == NULL)
-    {
-        std::cout << "Unable to create texture! SDL Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
-
-        //Load PNG image
-    SDL_Surface* loadedMap = IMG_Load("C:/FirstGame/Picture/Map1.png");
-    if(loadedSurface == NULL)
-    {
-        std::cout << "Unable to load image! SDL Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
-    //Create texture from surface pixels
-     Map1 = SDL_CreateTextureFromSurface(renderer, loadedMap);
-    if(Map1 == NULL)
-    {
-        std::cout << "Unable to create texture! SDL Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
-    //Get rid of old loaded surface
-    SDL_FreeSurface(loadedSurface);
-    SDL_FreeSurface(startButtonSurface);
-    SDL_FreeSurface(exitButtonSurface);
-    SDL_FreeSurface(loadedMap);
-    return true;
-}
 //Frees media and shuts down SDL
 void close()
 {
-    //Free texture
-    SDL_DestroyTexture(texture);
-    texture = NULL;
-
     //Destroy renderer
     SDL_DestroyRenderer(renderer);
     renderer = NULL;
@@ -690,22 +539,31 @@ void close()
     //Destroy window
     SDL_DestroyWindow(window);
     window = NULL;
-    SDL_DestroyTexture(startButtonTexture);
-    startButtonTexture = NULL;
-    SDL_DestroyTexture(exitButtonTexture);
-    exitButtonTexture = NULL;
-    SDL_DestroyTexture(Map1);
-    Map1 = NULL;
+   
     //Free loaded images
+    MenuStartTexture.free();
+    MenuExitTexture.free();
 	gSpriteSheetTexture.free();
+    Map1.free();
+    BackGroundTexture.free();
+
     //Quit SDL subsystems
-    Mix_Quit();
     IMG_Quit();
     SDL_Quit();
 }
 
 int main(int argc, char* argv[])
-{
+{               startButtonRect.x = SCREEN_WIDTH/2 ;    // Tọa độ x
+                startButtonRect.y = SCREEN_HEIGHT/2 + 45 ;    // Tọa độ y
+                startButtonRect.w = 200;    // Chiều rộng
+                startButtonRect.h = 50;     // Chiều cao
+
+                exitButtonRect.x = SCREEN_WIDTH/2 ;     // Tọa độ x
+                exitButtonRect.y = SCREEN_HEIGHT/2 + 110;     // Tọa độ y
+                exitButtonRect.w = 200;     // Chiều rộng
+                exitButtonRect.h = 50;      // Chiều cao
+
+
         Mixer1 mixer1;
         mixer1.initAudio();
         mixer1.loadAudio();
@@ -718,11 +576,6 @@ int main(int argc, char* argv[])
     if(!mixer1.initAudio()){
         std::cout << "failed" << std::endl;
     }
-    if(!loadMedia())
-    {
-        std::cout << "Failed to load media!" << std::endl;
-        return -1;
-    }
     mixer1.playmusic1();;
 
     //Main loop flag
@@ -733,20 +586,7 @@ int main(int argc, char* argv[])
 
     //While application is running
     while(!quit)
-    {        // Khai báo biến cho nút "Start Game"
-                SDL_Rect startButtonRect;
-                startButtonRect.x = SCREEN_WIDTH/2 ;    // Tọa độ x
-                startButtonRect.y = SCREEN_HEIGHT/2 + 45 ;    // Tọa độ y
-                startButtonRect.w = 200;    // Chiều rộng
-                startButtonRect.h = 50;     // Chiều cao
-
-                // Khai báo biến cho nút "Exit Game"
-                SDL_Rect exitButtonRect;
-                exitButtonRect.x = SCREEN_WIDTH/2 ;     // Tọa độ x
-                exitButtonRect.y = SCREEN_HEIGHT/2 + 110;     // Tọa độ y
-                exitButtonRect.w = 200;     // Chiều rộng
-                exitButtonRect.h = 50;      // Chiều cao
-
+    {      
         //Handle events on queue
         while(SDL_PollEvent(&e) != 0)
         {
@@ -766,37 +606,67 @@ int main(int argc, char* argv[])
             SDL_GetMouseState(&mouseX, &mouseY);
             if (mouseX >= startButtonRect.x && mouseX <= startButtonRect.x + startButtonRect.w && mouseY >= startButtonRect.y && mouseY <= startButtonRect.y + startButtonRect.h)
             {
-                bool quit1 = false;
+               bool quit1 = false;
                 SDL_Event e1;
                 Figure figure;
+                // The background scrolling offset
+                int scrollingOffset = 0;
 
                 while (!quit1) {
-                    // Vẽ lại màn hình ở đầu vòng lặp
-                    SDL_SetRenderDrawColor( renderer, 0xFF, 0xFF, 0xFF, 0xFF );
-                    SDL_RenderClear( renderer );
-                    SDL_SetRenderDrawColor( renderer, 0x00, 0x00, 0x00, 0xFF );
-                      //Render texture to screen
-                    SDL_RenderCopy(renderer, Map1, NULL, NULL);
-                    figure.render();
                     figure.CreateMaze(1);
-                    
 
+                    // Xử lý sự kiện
                     while (SDL_PollEvent(&e1) != 0) {
                         if (e1.type == SDL_QUIT) {
                             quit1 = true;
                             isTest = true;
                         }
-                        // Xử lý sự kiện cho hình
-                        figure.handleEvent( e1 );
+                        // Xử lý sự kiện cho đối tượng figure
+                        figure.handleEvent(e1);
                     }
+
+                    // Di chuyển đối tượng figure
                     figure.move();
-                                
-                    //Update screen
-                    SDL_RenderPresent( renderer );
+
+                    // Scroll background
+                    --scrollingOffset;
+                    if (scrollingOffset < -Map1.getWidth()) {
+                        scrollingOffset = 0;
+                    }
+
+                    // Clear screen
+                    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+                    SDL_RenderClear(renderer);
+
+                    // Render background
+                    int bg_width = Map1.getWidth();
+
+                    // Vẽ background nhiều lần để đủ chiều dài của cửa sổ hiển thị
+                    while (scrollingOffset < SCREEN_WIDTH) {
+                        Map1.render(scrollingOffset, 0);
+                        scrollingOffset += bg_width;
+                    }
+
+                    // Đặt lại giá trị scrollingOffset nếu đã vượt quá chiều dài của texture
+                    if (scrollingOffset >= SCREEN_WIDTH) {
+                        scrollingOffset -= bg_width;
+                    }
+
+                    // Vẽ background tiếp theo để che phủ toàn bộ màn hình
+                    Map1.render(scrollingOffset + bg_width, 0);
+
+                    // Vẽ các đối tượng khác lên renderer
+                    figure.render();
+
+                    // Cập nhật renderer
+                    SDL_RenderPresent(renderer);
+
+                    // Kiểm tra điều kiện thoát vòng lặp
                     quit1 = isTest;
-                                
                 }
+
                 isTest = false;
+
                 
              }
            
@@ -812,16 +682,16 @@ int main(int argc, char* argv[])
           mixer1.PlayMusicN();
         //Clear screen
         SDL_RenderClear(renderer);
-        //Render texture to screen
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
-          // Hiển thị các nút menu
-        SDL_RenderCopy(renderer, startButtonTexture, NULL, &startButtonRect);
-        SDL_RenderCopy(renderer, exitButtonTexture, NULL, &exitButtonRect);
+        BackGroundTexture.renderBackground();
+        MenuStartTexture.renderMenuStart();
+        MenuExitTexture.renderMenuExit();
+   
         //Update screen
         SDL_RenderPresent(renderer);
    
 }
 mixer1.closeMusic();
+mixer1.close();
 close();
 
 return 0;

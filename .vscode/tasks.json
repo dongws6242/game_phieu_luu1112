@@ -7,7 +7,9 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
+                
                 "${file}",
+                "C:/FirstGame/mixergame.cpp ",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "-ISDL/include",
@@ -18,6 +20,8 @@
                 "-lSDL2_image",
                 "-lSDL2_ttf",
                 "-lSDL2_mixer",
+                
+               
                 
             ],
             "options": {
