@@ -7,7 +7,6 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                
                 "${file}",
                 "C:/FirstGame/mixergame.cpp ",
                 "-o",

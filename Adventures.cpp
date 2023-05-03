@@ -1,21 +1,39 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <iostream>
+#include<SDL2/SDL_ttf.h>
 #include <string>
+#include<random>
 #include"mixergame.h"
 
 
 //Screen dimension constants
  const int SCREEN_WIDTH = 900;
  const int SCREEN_HEIGHT = 600;
+ int score = 0;
 
-// Khai báo biến cho nút "Start Game"
+ // Khai báo biến cho nút "Start Game"
 SDL_Rect startButtonRect ;
  // Khai báo biến cho nút "Exit Game"
 SDL_Rect exitButtonRect;
                
 SDL_Window* window = NULL;
  SDL_Renderer* renderer = NULL;
+ //Globally used font
+TTF_Font *gFont = NULL;
+
+ //Walking animation
+const int WALKING_ANIMATION_FRAMES = 8;
+const int SumOfTargets = 4;
+// The background scrolling offset
+int scrollingOffset = 0;
+
+SDL_Rect gSpriteClips[ WALKING_ANIMATION_FRAMES ];
+
+const int ICON_SIZE =32;
+const int SumOfGoldTargets = 20;
+
+SDL_Rect SumTargets[SumOfGoldTargets];
 
 //Xoay nhân vật
     bool isMoving; 
@@ -31,8 +49,12 @@ class LTexture {
 		//Deallocates memory
 		~LTexture();
 
+        SDL_Texture* getTexture();
+
 		//Loads image at specified path
 		bool loadTexture( std::string path );
+        //Creates image from font string
+		bool loadFromRenderedText( std::string textureText, SDL_Color textColor );
 		//Deallocates texture
 		void free();
 
@@ -50,6 +72,7 @@ class LTexture {
         void renderBackground();
         void renderMenuStart();
         void renderMenuExit();
+        void renderTargets(SDL_Rect *Targets);
 
         void close();
 
@@ -68,14 +91,9 @@ class LTexture {
         
 };
 
-//Walking animation
-const int WALKING_ANIMATION_FRAMES = 8;
-const int SumOfTargets = 5;
-
-SDL_Rect gSpriteClips[ WALKING_ANIMATION_FRAMES ];
-
  LTexture gSpriteSheetTexture;
  LTexture TargetTexture[SumOfTargets];
+ LTexture FontScore;
 
  LTexture Map1;
  LTexture BackGroundTexture;
@@ -84,7 +102,9 @@ SDL_Rect gSpriteClips[ WALKING_ANIMATION_FRAMES ];
  LTexture MenuStartTexture;
  LTexture MenuExitTexture;
 
-
+SDL_Texture* LTexture :: getTexture(){
+    return mTexture;
+}
 LTexture::LTexture()
 {
 	//Initialize
@@ -137,6 +157,40 @@ bool LTexture::loadTexture( std::string path )
 
 	//Return success
 	mTexture = newTexture;
+	return mTexture != NULL;
+}
+
+bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
+{
+	//Get rid of preexisting texture
+	free();
+
+	//Render text surface
+	SDL_Surface* textSurface = TTF_RenderText_Solid( gFont, textureText.c_str(), textColor );
+	if( textSurface == NULL )
+	{
+		printf( "Unable to render text surface! SDL_ttf Error: %s\n", TTF_GetError() );
+	}
+	else
+	{
+		//Create texture from surface pixels
+        mTexture = SDL_CreateTextureFromSurface( renderer, textSurface );
+		if( mTexture == NULL )
+		{
+			printf( "Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError() );
+		}
+		else
+		{
+			//Get image dimensions
+			mWidth = textSurface->w;
+			mHeight = textSurface->h;
+		}
+
+		//Get rid of old surface
+		SDL_FreeSurface( textSurface );
+	}
+	
+	//Return success
 	return mTexture != NULL;
 }
 
@@ -209,6 +263,11 @@ void LTexture::renderMenuExit(){
              SDL_RenderCopy(renderer, mTexture, NULL, &exitButtonRect);
 
 }
+void LTexture::renderTargets(SDL_Rect* Targets) {
+        // sử dụng kích thước mặc định của texture để vẽ
+        SDL_RenderCopy(renderer, mTexture, NULL, Targets);
+}
+
 
 int LTexture::getWidth()
 {
@@ -308,6 +367,19 @@ bool init()
         printf( "Failed to load background texture!\n" );
         return false;
     }
+    //Initialize SDL_ttf
+				if( TTF_Init() == -1 )
+				{
+					printf( "SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError() );
+					return  false;
+				}
+    //Open the font
+	gFont = TTF_OpenFont( "C:/FirstGame/Font.ttf", 20 );
+	if( gFont == NULL )
+	{
+		printf( "Failed to load lazy font! SDL_ttf Error: %s\n", TTF_GetError() );
+		return false;
+	}
 
     return true;
 } 
@@ -333,6 +405,16 @@ class Figure {
 		//Shows the dot on the screen
 		void render();
 
+          // Getter function for mPosX
+        int getPosX() const {
+            return mPosX;
+        }
+
+        // Getter function for mPosY
+        int getPosY() const {
+            return mPosY;
+        }
+
         //CreateMazeObject
         void CreateMaze(int level);
 
@@ -343,9 +425,8 @@ class Figure {
 		//The velocity of the dot
 		int mVelX, mVelY;
 
-        //Collider 
+         //Collider 
         SDL_Rect mFigure;
-
 
 };
 
@@ -446,6 +527,16 @@ bool checkCollision(SDL_Rect a, SDL_Rect b[], int numWalls)
     return false;
 }
 
+int checkCollision1(SDL_Rect a, SDL_Rect b[], int size) {
+    for (int i = 0; i < size; i++) {
+        if (SDL_HasIntersection(&a, &b[i])) {
+            return i;
+            score++;
+        }
+    }
+    return -1;
+}
+
 
 int currentFrame =0;
 
@@ -520,14 +611,34 @@ if (checkCollision(mFigure,WallOx,4) == true  or checkCollision(mFigure,WallOy,3
 
 }
 
-
-
 void Figure::render(){
     // Render the sprite using the current frame
     gSpriteSheetTexture.render( mPosX, mPosY, &gSpriteClips[ currentFrame ] );
     }
+
+int  Random(int a,int b){
+        // Khởi tạo engine
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(a, b);
+
+    // Sinh số nguyên ngẫu nhiên trong khoảng [a, b]
+    int random_number = dist(gen);
+
+    return random_number;
+}
+
+
+            // Hàm tạo tọa độ ngẫu nhiên, cách nhau một khoảng bằng 32
+SDL_Point randomPoint() {
+    int x = Random(1, 27)*ICON_SIZE ;
+    int y = Random(1, 17)*ICON_SIZE ;
+    return {x, y};
+}
+
 void Figure::CreateMaze(int level) {
     if (level == 1) {
+        
         // Tạo tường thẳng đứng
         SDL_Rect WallOy[3];
         WallOy[0] = {SCREEN_WIDTH / 6 - 4 , SCREEN_HEIGHT / 4, 1, SCREEN_HEIGHT  / 4};
@@ -552,10 +663,30 @@ void Figure::CreateMaze(int level) {
 
         // Đặt lại màu vẽ ban đầu
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-
+        
         SDL_RenderPresent(renderer);
+
+                    // Scroll background
+                    --scrollingOffset;
+                    if (scrollingOffset < -Map1.getWidth()) {
+                        scrollingOffset = 0;
+                    }
+
+                    // Clear screen
+                    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+                    SDL_RenderClear(renderer);
+
+                    //Render background
+				    Map1.render( scrollingOffset, 0 );
+				
+
+                    // Vẽ background tiếp theo để che phủ toàn bộ màn hình
+                    Map1.render(scrollingOffset + Map1.getWidth(), 0);
+        
+
     }
 }
+
 
 //Frees media and shuts down SDL
 void close()
@@ -567,8 +698,12 @@ void close()
     //Destroy window
     SDL_DestroyWindow(window);
     window = NULL;
-   
+    //Free global font
+	TTF_CloseFont( gFont );
+	gFont = NULL;
+
     //Free loaded images
+    FontScore.free();
     MenuStartTexture.free();
     MenuExitTexture.free();
 	gSpriteSheetTexture.free();
@@ -582,10 +717,37 @@ void close()
     //Quit SDL subsystems
     IMG_Quit();
     SDL_Quit();
+    TTF_Quit();
 }
 
+
 int main(int argc, char* argv[])
-{               startButtonRect.x = SCREEN_WIDTH/2 ;    // Tọa độ x
+{      
+                 // Tạo một vector chứa các tọa độ ngẫu nhiên
+            std::vector<SDL_Point> points;
+
+            for (int i = 0; i < SumOfGoldTargets ; i++) {
+
+                SDL_Point point = randomPoint();
+                // Kiểm tra xem tọa độ đã được sử dụng chưa
+                bool used = false;
+
+                for (SDL_Point p : points) {
+                    if (p.x == point.x && p.y == point.y) {
+                        used = true;
+                        break;
+                    }
+                }
+                
+                // Nếu tọa độ chưa được sử dụng thì thêm vào vector
+                if (!used) {
+                    points.push_back(point);
+                } else {
+                    i--;
+                }
+            }
+   
+                startButtonRect.x = SCREEN_WIDTH/2 ;    // Tọa độ x
                 startButtonRect.y = SCREEN_HEIGHT/2 + 45 ;    // Tọa độ y
                 startButtonRect.w = 200;    // Chiều rộng
                 startButtonRect.h = 50;     // Chiều cao
@@ -641,8 +803,7 @@ int main(int argc, char* argv[])
                bool quit1 = false;
                 SDL_Event e1;
                 Figure figure;
-                // The background scrolling offset
-                int scrollingOffset = 0;
+                
 
                 while (!quit1) {
                     figure.CreateMaze(1);
@@ -660,39 +821,56 @@ int main(int argc, char* argv[])
                     // Di chuyển đối tượng figure
                     figure.move();
 
-                    // Scroll background
-                    --scrollingOffset;
-                    if (scrollingOffset < -Map1.getWidth()) {
-                        scrollingOffset = 0;
-                    }
-
-                    // Clear screen
-                    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-                    SDL_RenderClear(renderer);
-
-                    // Render background
-                    int bg_width = Map1.getWidth();
-
-                    // Vẽ background nhiều lần để đủ chiều dài của cửa sổ hiển thị
-                    while (scrollingOffset < SCREEN_WIDTH) {
-                        Map1.render(scrollingOffset, 0);
-                        scrollingOffset += bg_width;
-                    }
-
-                    // Đặt lại giá trị scrollingOffset nếu đã vượt quá chiều dài của texture
-                    if (scrollingOffset >= SCREEN_WIDTH) {
-                        scrollingOffset -= bg_width;
-                    }
-
-                    // Vẽ background tiếp theo để che phủ toàn bộ màn hình
-                    Map1.render(scrollingOffset + bg_width, 0);
-
                     // Vẽ các đối tượng khác lên renderer
                     figure.render();
+                   
+         // Vẽ các texture
+                    SDL_Rect Pos = {figure.getPosX(),figure.getPosY(), 128, 128};
 
-                    
-                 TargetTexture[0].renderMenuStart();
+                    SDL_Rect TypeTargets[points.size()];   
+            
+                    for (int i = 0; i < points.size(); i++) {
 
+                     TypeTargets[i] = {points[i].x, points[i].y, ICON_SIZE, ICON_SIZE};
+
+                    SDL_RenderCopy(renderer, TargetTexture[2].getTexture(), NULL, &TypeTargets[i]);
+                        }
+            int hitIndex = checkCollision1(Pos, TypeTargets, points.size());
+
+            if (hitIndex >= 0) {  // Có va chạm
+                // Xóa texture va chạm
+                points.erase(points.begin() + hitIndex);
+                score++;
+                // Xóa cảnh vẽ hiện tại
+                SDL_RenderClear(renderer);
+
+                // Vẽ lại các texture còn lại
+                SDL_Rect TypeTargets[points.size()];
+                for (int i = 0; i < points.size(); i++) {
+                    TypeTargets[i] = {points[i].x, points[i].y, ICON_SIZE, ICON_SIZE};
+                    SDL_RenderCopy(renderer, TargetTexture[2].getTexture(), NULL, &TypeTargets[i]);
+                }
+               
+                    // Cập nhật renderer
+                    SDL_RenderPresent(renderer);
+            }
+
+             //Render text
+		SDL_Color textColor = { 100, 200, 165 };
+		std::string text = "SCORE : ";
+        std::string myScore = std::to_string(score);
+
+        text += myScore;
+        if (!FontScore.loadFromRenderedText(text.c_str(), textColor))
+
+		{
+			printf( "Failed to render text texture!\n" );
+		}
+
+                    	//Render current frame
+				FontScore.render( SCREEN_WIDTH/2, 0 );
+                
+          
                     // Cập nhật renderer
                     SDL_RenderPresent(renderer);
 
@@ -723,8 +901,10 @@ int main(int argc, char* argv[])
    
         //Update screen
         SDL_RenderPresent(renderer);
+       
    
 }
+
 mixer1.closeMusic();
 mixer1.close();
 close();
