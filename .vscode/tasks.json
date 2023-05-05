@@ -7,8 +7,8 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
+                "C:/FirstGame/mixergame.cpp",
                 "${file}",
-                "C:/FirstGame/mixergame.cpp ",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "-ISDL/include",

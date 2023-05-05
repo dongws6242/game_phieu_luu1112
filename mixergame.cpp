@@ -34,39 +34,56 @@ bool Mixer1::initAudio()
     return true;
 }
 
-bool Mixer1::loadAudio()
+bool Mixer1::loadAudio(const std::string& filePath)
 {
-     //Load music
-    Mix_Music* music = Mix_LoadMUS("C:/FirstGame/Sound/SoundTrack.wav");
+    //Load music
+    music = Mix_LoadMUS(filePath.c_str());
     if (music == NULL)
     {
         std::cout << "Failed to load music! SDL_mixer Error: " << Mix_GetError() << std::endl;
         return false;
     }
-    //Play music infinitely
-    Mix_PlayMusic(music, -1);
     return true;
 }
 
-void Mixer1::PauseMusic()
+
+
+void Mixer1::playMusicOnce()
 {
-     if (Mix_PlayingMusic() == 1) // kiểm tra xem có đang phát nhạc hay không
+    Mix_PlayMusic(music, 1); // phát nhạc một lần
+}
+
+void Mixer1::playMusicLoop()
+{
+    Mix_PlayMusic(music, -1); // phát nhạc vô hạn lần
+}
+
+void Mixer1::stopMusic()
+{
+    if (Mix_PlayingMusic() == 1) // kiểm tra xem có đang phát nhạc hay không
     {
-        Mix_PauseMusic(); // tạm dừng nhạc
+        Mix_HaltMusic(); // dừng phát nhạc
         isPlayingMusic = false; // cập nhật biến kiểm soát trạng thái phát nhạc
-        isMusicPaused = true; // cập nhật biến kiểm soát trạng thái tạm dừng nhạc
+        isMusicPaused = false; // cập nhật biến kiểm soát trạng thái tạm dừng nhạc
     }
 }
 
-void Mixer1::ResumeMusic()
+void Mixer1::resumeMusic()
 {
-   if (isMusicPaused) // kiểm tra xem nhạc đã tạm dừng hay chưa
+    if (Mix_PlayingMusic() == 1) // kiểm tra xem có đang phát nhạc hay không
     {
-        Mix_ResumeMusic(); // tiếp tục phát nhạc
+        Mix_HaltMusic(); // dừng phát nhạc
+        isPlayingMusic = false; // cập nhật biến kiểm soát trạng thái phát nhạc
+        isMusicPaused = false; // cập nhật biến kiểm soát trạng thái tạm dừng nhạc
+    }
+    else
+    {
+        Mix_PlayMusic(music, -1); // phát nhạc vô hạn lần
         isPlayingMusic = true; // cập nhật biến kiểm soát trạng thái phát nhạc
         isMusicPaused = false; // cập nhật biến kiểm soát trạng thái tạm dừng nhạc
     }
 }
+
 void Mixer1::closeMusic()
 {
     //Free music and close SDL
@@ -79,29 +96,6 @@ void Mixer1::closeMusic()
     
 }
 
-void Mixer1::PlayMusic()
-{
-    
-                if (isPlayingMusic) // nếu đang phát nhạc
-                {
-                    PauseMusic(); // tạm dừng nhạc
-                }
-                else // nếu đã tạm dừng nhạc
-                {
-                    ResumeMusic(); // tiếp tục phát nhạc
-                }
-}
-
-void Mixer1::PlayMusicN(){
-    // nếu đang phát nhạc và nhạc đã kết thúc
-        if (isPlayingMusic && Mix_PlayingMusic() == 0)
-        {
-            Mix_PlayMusic(music, -1); // phát nhạc vô hạn lần
-        }
-}
-void Mixer1::playmusic1(){
-     Mix_PlayMusic(music, -1);
-}
 void Mixer1::close(){
     //Quit SDL subsystems
     Mix_Quit();

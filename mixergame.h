@@ -14,13 +14,12 @@ class Mixer1 {
         static bool isMusicPaused;  // biến kiểm soát trạng thái tạm dừng nhạc
 
         bool initAudio();
-        bool loadAudio();
-        void PauseMusic();
-        void ResumeMusic();
-		void closeMusic();
-		void PlayMusic();
-		void PlayMusicN();
-        void playmusic1();
+        bool loadAudio(const std::string& filePath);
+        void playMusicOnce();
+        void playMusicLoop();
+		void stopMusic();
+        void resumeMusic();
+        void closeMusic();
         void close();
        
 };
