@@ -11,7 +11,10 @@
 //Screen dimension constants
  const int SCREEN_WIDTH = 900;
  const int SCREEN_HEIGHT = 600;
+ const int Figure_Size = 128;
+ const int  Icon = 64;
  int score = 0;
+
 
 
    
@@ -102,6 +105,11 @@ class LTexture {
 
  LTexture Map1;
  LTexture BackGroundTexture;
+ LTexture Boss1;
+
+ LTexture Drag;
+ LTexture Hammer;
+ LTexture Bag;
 
 
  LTexture MenuStartTexture;
@@ -341,10 +349,10 @@ bool init()
 	else
 	{     for (int i=0; i<WALKING_ANIMATION_FRAMES; i++){
         //Set sprite clips
-		gSpriteClips[ i ].x =   i*128;
+		gSpriteClips[ i ].x =   i*Figure_Size;
 		gSpriteClips[ i ].y =   0;
-		gSpriteClips[ i ].w =  128;
-		gSpriteClips[ i ].h = 128;
+		gSpriteClips[ i ].w =  Figure_Size;
+		gSpriteClips[ i ].h = Figure_Size;
     }
 	}
     if (!TargetTexture[0].loadTexture("C:/FirstGame/Picture/Sad.png")){
@@ -372,11 +380,31 @@ bool init()
 		printf( "Failed to load Map texture!\n" );
 		return  false;
 	}
+
+    if (!Boss1.loadTexture( "C:/FirstGame/Picture/Boss1.png") ) {
+        printf( "Failed to load BOSS texture !\n" );
+        return false;
+    }
+    if (!Bag.loadTexture( "C:/FirstGame/Picture/Bag.png") ) {
+        printf( "Failed to load Bag texture !\n" );
+        return false;
+    }
+    if (!Drag.loadTexture( "C:/FirstGame/Picture/Drag.png") ) {
+        printf( "Failed to load BOSS texture !\n" );
+        return false;
+    }
+    if (!Hammer.loadTexture( "C:/FirstGame/Picture/Hammer.png") ) {
+        printf( "Failed to load BOSS texture !\n" );
+        return false;
+    }
+
     if (!BackGroundTexture.loadTexture( "C:/FirstGame/Picture/Background.png"))
     {
         printf( "Failed to load background texture!\n" );
         return false;
     }
+
+
      if (!MenuStartTexture.loadTexture( "C:/FirstGame/Picture/StartButton.png"))
     {
         printf( "Failed to load background texture!\n" );
@@ -407,11 +435,11 @@ bool init()
 class Figure {
      public:
 		//The dimensions of the dot
-		static const int FIGURE_WIDTH = 128;
-		static const int FIGURE_HEIGHT = 128;
+		static const int FIGURE_WIDTH = Figure_Size;
+		static const int FIGURE_HEIGHT = Figure_Size;
 
 		//Maximum axis velocity of the dot
-		static const int FIGURE_VEL = 1;
+		static const int FIGURE_VEL = 3;
 
 		//Initializes the variables
 		Figure();
@@ -437,6 +465,7 @@ class Figure {
 
         //CreateMazeObject
         void CreateMaze(int level);
+        void ClearMaze();
 
     private:
 		//The X and Y offsets of the dot
@@ -549,7 +578,7 @@ bool checkCollision(SDL_Rect a, SDL_Rect b[], int numWalls)
     // If we get here, there is no collision
     return false;
 }
-bool checkCollision_Mixer(SDL_Rect a, SDL_Rect b)
+bool checkCollision_2Wall(SDL_Rect a, SDL_Rect b)
 {   
     // Calculate the sides of rect A
     int leftA, leftB;
@@ -577,6 +606,34 @@ bool checkCollision_Mixer(SDL_Rect a, SDL_Rect b)
 
     // If none of the sides from A are outside B
     return true;
+}
+
+bool CheckBDH(int a, int b){
+  bool res;
+        if (a ==1 and b ==2 ){
+           res = false;
+        } else{
+            if (a==1 and b ==3 ){
+                res = true;
+            }
+        }
+        if (a ==2 and b ==1 ){
+            res = true;
+        } else{
+            if (a==1 and b ==3 ){
+                res = false;
+            }
+        }
+    
+        if (a ==3 and b ==2 ){
+           res =  true;
+        } else{
+            if (a==1 and b ==3 ){
+               res = false;
+            }
+        };
+
+    return res;
 }
 
 
@@ -688,11 +745,16 @@ SDL_Point randomPoint() {
     int y = Random(1, 17)*ICON_SIZE ;
     return {x, y};
 }
+void ClearWalls(SDL_Renderer* renderer, SDL_Rect walls[], int wallCount) {
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255 , 255); // đặt màu nền là màu đen
+    for (int i = 0; i < wallCount; i++) {
+        SDL_RenderFillRect(renderer, &walls[i]); // vẽ màu nền lên vùng của tường
+    }
+}
+
 
 void Figure::CreateMaze(int level) {
-    if (level == 1) {
-        
-        // Tạo tường thẳng đứng
+      // Tạo tường thẳng đứng
         SDL_Rect WallOy[3];
         WallOy[0] = {SCREEN_WIDTH / 6 - 4 , SCREEN_HEIGHT / 4, 1, SCREEN_HEIGHT  / 4};
         WallOy[1] = {SCREEN_WIDTH / 3, 0, 1, (SCREEN_HEIGHT -64) / 2};
@@ -704,9 +766,10 @@ void Figure::CreateMaze(int level) {
         WallOx[1] = {  64 + SCREEN_WIDTH / 4, SCREEN_HEIGHT / 8 +50 , SCREEN_WIDTH / 6, 1};
         WallOx[2] = {SCREEN_WIDTH * 7 / 10, SCREEN_HEIGHT / 5, SCREEN_HEIGHT / 6, 1};
         WallOx[3] = {0, SCREEN_HEIGHT * 3 / 4, SCREEN_WIDTH * 3 / 4 + 45, 1};
-
+    if (level == 1) {
+        
         // Đặt màu vẽ thành màu đỏ
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        SDL_SetRenderDrawColor(renderer, 135, 206, 235, 255);
 
         for (int i = 0; i < 3; i++) {
             SDL_RenderDrawRect(renderer, &WallOy[i]);
@@ -734,10 +797,23 @@ void Figure::CreateMaze(int level) {
 				
                      // Vẽ background tiếp theo để che phủ toàn bộ màn hình
                     Map1.render_Map(scrollingOffset + Map1.getWidth(), 0);
-                   
+
+    } else {
+        if (level == 0) {
+    SDL_SetRenderDrawColor(renderer, 135, 206, 235, 255); // đặt màu nền là màu đỏ
+    SDL_RenderClear(renderer); // xóa màn hình và vẽ màu đỏ lên màn hình
+}
 
     }
 }
+void Figure::ClearMaze() {
+    // Xóa màn hình bằng hàm SDL_RenderClear()
+    SDL_RenderClear(renderer);
+
+    // Cập nhật màn hình
+    SDL_RenderPresent(renderer);
+}
+
 
 
 //Frees media and shuts down SDL
@@ -760,6 +836,12 @@ void close()
     MenuStartTexture.free();
     MenuExitTexture.free();
 	gSpriteSheetTexture.free();
+
+    Boss1.free();
+    Bag.free();
+    Drag.free();
+    Hammer.free();
+
     Map1.free();
     BackGroundTexture.free();
     for (int i=0; i<SumOfTargets;i++){
@@ -813,11 +895,13 @@ int main(int argc, char* argv[])
 
         Mixer1 SoundTrack;
         Mixer1 Ting;
+        Mixer1 Fight;
 
       
         
         SoundTrack.initAudio();
         Ting.initAudio();
+        
        
         
         SoundTrack.loadAudio("C:/FirstGame/Sound/SoundTrack.wav");
@@ -895,7 +979,7 @@ int main(int argc, char* argv[])
                     figure.render();
                    
          // Vẽ các texture
-                    SDL_Rect Pos = {figure.getPosX(),figure.getPosY(), 128, 128};
+                    SDL_Rect Pos = {figure.getPosX(),figure.getPosY(), Figure_Size, Figure_Size};
 
                     SDL_Rect TypeTargets[points.size()];   
             
@@ -910,7 +994,7 @@ int main(int argc, char* argv[])
              Ting.loadAudio("C:/FirstGame/Sound/Ting.wav");
             if (hitIndex >= 0) {  // Có va chạm
            
-        if (checkCollision_Mixer(Pos,TypeTargets[hitIndex])){
+        if (checkCollision_2Wall(Pos,TypeTargets[hitIndex])){
             Ting.playMusicOnce();
         } 
 
@@ -942,11 +1026,64 @@ int main(int argc, char* argv[])
 		{
 			printf( "Failed to render text texture!\n" );
 		}
-
                     	//Render current frame
 				FontScore.render_Map( SCREEN_WIDTH/2, 0 );
                 
           
+
+        SDL_Rect Boss = {0,SCREEN_HEIGHT - Figure_Size*2/3 ,Figure_Size*2/3,Figure_Size*2/3};
+        SDL_RenderCopy(renderer,Boss1.getTexture(),NULL, &Boss);
+        if(checkCollision_2Wall(Pos,Boss)) {
+            
+            figure.CreateMaze(0);
+            SDL_Rect HAMMER = {SCREEN_WIDTH *5/8 , SCREEN_HEIGHT/2, Icon, Icon};
+            SDL_Rect BAG =    {SCREEN_WIDTH*5/8 , SCREEN_HEIGHT/2 - 2* Icon,Icon, Icon};
+            SDL_Rect DRAG = {SCREEN_WIDTH*5/8, SCREEN_HEIGHT /2 + 2*Icon, Icon, Icon};
+
+             SDL_RenderCopy(renderer,Hammer.getTexture(),NULL, &HAMMER);
+             SDL_RenderCopy(renderer,Bag.getTexture(),NULL, &BAG);
+             SDL_RenderCopy(renderer,Drag.getTexture(),NULL, &DRAG);
+
+             SDL_Rect Figure_Boss= {SCREEN_WIDTH * 3/4 , SCREEN_HEIGHT/2 , Figure_Size, Figure_Size};
+             SDL_Rect Boss_Figure = {SCREEN_WIDTH *1/4, SCREEN_HEIGHT/2 , Figure_Size *2/3, Figure_Size*2/3};
+             // Render the sprite using the current frame
+            gSpriteSheetTexture.render( SCREEN_WIDTH * 3/4,  SCREEN_HEIGHT *2/5, &gSpriteClips[ currentFrame ] );
+             SDL_RenderCopy(renderer,Boss1.getTexture(),NULL,&Boss_Figure);
+             int hammer =0,bag =0, drag =0;
+             std :: vector <int> Check_BDH;
+            if (mouseX >= HAMMER.x && mouseX <= HAMMER.x + HAMMER.w && mouseY >= HAMMER.y && mouseY <= HAMMER.y + HAMMER.h) {
+            // Chuột va chạm với đối tượng Hammer
+            Check_BDH.push_back(1);
+            hammer++;
+        } else {
+        if (mouseX >= BAG.x && mouseX <= BAG.x + BAG.w && mouseY >= BAG.y && mouseY <= BAG.y + BAG.h) {
+            // Chuột va chạm với đối tượng Bag
+            Check_BDH.push_back(2);
+            bag++;
+        } else {
+            
+        if (mouseX >= DRAG.x && mouseX <= DRAG.x + DRAG.w && mouseY >= DRAG.y && mouseY <= DRAG.y + DRAG.h) {
+            // Chuột va chạm với đối tượng Drag
+            Check_BDH.push_back(3);
+            drag++;
+         }
+        }
+    }
+         std :: vector <int> AI_BDH;
+        for (int i = 0; i < 5; i++){
+            AI_BDH.push_back(Random(1,3));
+        }
+    int count_Player =0, count_AI=0;
+    for (int i = 0; i < 5; i++){
+        if (Check_BDH[i],AI_BDH[i]){
+            count_Player++;
+        } else{
+            count_AI++;
+        }
+    }
+
+        }
+
                     // Cập nhật renderer
                     SDL_RenderPresent(renderer);
 
