@@ -580,7 +580,7 @@ class Figure {
 		static const int FIGURE_HEIGHT = Figure_Size;
 
 		//Maximum axis velocity of the dot
-		static const int FIGURE_VEL = 1;
+		static const int FIGURE_VEL = 2;
 
 		//Initializes the variables
 		Figure();
@@ -1184,7 +1184,7 @@ int main(int argc, char* argv[])
                     
                         // Vẽ các texture
                         
-                        SDL_Rect Pos = { figure.getPosX(),figure.getPosY(), Figure_Size, Figure_Size};
+                        SDL_Rect Pos = { figure.getPosX()  ,figure.getPosY() + 64  , Figure_Size/2, Figure_Size/2};
                         SDL_Rect Boss = {-Figure_Size*1/4 - 10 ,SCREEN_HEIGHT - Figure_Size - 20 ,Figure_Size*3/2,Figure_Size*3/2};
 
                         SDL_Rect HAMMER = {SCREEN_WIDTH *5/8 , SCREEN_HEIGHT/2, Icon, Icon};
@@ -1429,7 +1429,7 @@ int main(int argc, char* argv[])
             FontScore.render_Map(SCREEN_WIDTH / 2, 0);
             FontHighScore.render_Map(SCREEN_WIDTH /2 +Figure_Size,0);
 
-            if(count_Player   < count_AI ) {
+            if(count_Player  +6 < count_AI ) {
 
                 Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
                 Uint32 elapsedTime = 0;
@@ -1463,7 +1463,7 @@ int main(int argc, char* argv[])
 
         }
         else{
-            while  (count_Player   > count_AI) {
+            while  (count_Player + 6  > count_AI) {
                 
                 Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
                 Uint32 elapsedTime = 0;
@@ -1514,7 +1514,7 @@ int main(int argc, char* argv[])
 
             for (int i = 0; i < points.size(); i++) {
 
-            TypeTargets[i] = {points[i].x, points[i].y, ICON_SIZE, ICON_SIZE};
+            TypeTargets[i] = {points[i].x, points[i].y, ICON_SIZE*4/5, ICON_SIZE*4/5};
 
             SDL_RenderCopy(renderer, TargetTexture[2].getTexture(), NULL, &TypeTargets[i]);
             }
