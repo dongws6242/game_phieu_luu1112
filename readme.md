@@ -50,6 +50,10 @@
         - Hãy đi đến góc cuối chương trình để bạn có thể đánh Boss . Tùy vào mỗi level mà Boss của bạn nằm ở góc trái hay góc phải hoặc bất kì ở chỗ nào . Và khi diệt Boss bạn sẽ có những lợi ích rất cao.
 
         - Để tắt Nhạc nền bạn hãy nhấn phím "P" trên bàn phím để tắt âm thanh.
+- Mẹo để Bạn đi đến hết Map level :
+        - Hãy ăn thật nhiều vàng để tránh rơi điểm số về 0.
+        - Vượt qua Boss của màn 1 
+        - Khi sang Level 2 thì bạn cần phải xác định tìm xem con Boss ẩn náu ở đâu . Nếu chạm vào Boss bạn sẽ được cộng 10 đ ngược  lại bạn sẽ bị trừ 20 đ.
 
 ## Đề xuất hướng cái thiện
 
@@ -65,7 +69,7 @@
 
 - 6. Thêm Nút Reset lại game để người chơi có trải nghiệm đầy đủ hơn.
 
-- 7. Tách thêm  chương trình chính  ra thành nhiều File Header hơn  cho người đọc dễ hiểu hơn  và tối ưu các Code hiện tại để chương trình được tối ưu hơn .
+- 7. Tách thêm  chương trình chính  ra thành nhiều File Header hơn  thay vì chỉ 1 file Mixer như hiện tại  cho người đọc dễ hiểu hơn  và tối ưu các Code hiện tại để chương trình được tối ưu hơn .
 
 - 8. Tạo ra các thử thách mới để game thêm trải nghiệm cho mọi người "(Cần thời gian)".
 
@@ -83,7 +87,9 @@
   - Học được cách cài trình biên dịch cùng VS Code , kĩ thuật  tách file, cách dùng SDL và cách dùng GitHub.
   - Rút ra kinh nghiệm quản lí và sắp xếp thời gian, xây dựng kế hoạch.
   - Rèn luyện được khả năng tự học, tự tìm hiểu và khả năng lập trình.
-
+## Lưu ý :
+ - Adventures : Là Bản chính .
+ - Preview : Phiên bản chạy thử và sửa.
 ## Tài liệu Tham khảo
 ### +) CÁC Ý TƯỞNG ĐƯỢC MÌNH THỰC HIỆN VÀ SỬA ĐỔI  SAO CHO PHÙ HỢP VỚI NHỮNG GÌ MÀ TRANG WEB LAZYFOO HƯỚNG DẪN : https://lazyfoo.net/tutorials/SDL/
 ### +) Cách cài VScode và SDL2 : https://www.youtube.com/watch?v=Zdg6aaBTctw

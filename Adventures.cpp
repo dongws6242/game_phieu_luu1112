@@ -906,7 +906,7 @@ void Figure::CreateMaze(int level) {
         if (checkCollision(mFigure,WallOx,4) == true  or checkCollision(mFigure,WallOy,3) == true ){
                 //score++;
                 isTest = true;
-        }
+       }
 
 }
     
@@ -1160,7 +1160,7 @@ int main(int argc, char* argv[])
 
                     isTest = false;
                     bool quit1 = false;
-                    score = 1;
+                    score = 0;
                     drag = 0;
                     hammer = 0;
                     bag = 0;
@@ -1429,7 +1429,7 @@ int main(int argc, char* argv[])
             FontScore.render_Map(SCREEN_WIDTH / 2, 0);
             FontHighScore.render_Map(SCREEN_WIDTH /2 +Figure_Size,0);
 
-            if(count_Player  +6 < count_AI ) {
+            if(count_Player   < count_AI ) {
 
                 Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
                 Uint32 elapsedTime = 0;
@@ -1463,7 +1463,7 @@ int main(int argc, char* argv[])
 
         }
         else{
-            while  (count_Player + 6  > count_AI) {
+            while  (count_Player   > count_AI) {
                 
                 Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
                 Uint32 elapsedTime = 0;
