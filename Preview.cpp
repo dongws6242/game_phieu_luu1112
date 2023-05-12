@@ -14,13 +14,14 @@
  const int Figure_Size = 128;
  const int  Icon = 64;
 
-int score = 0;
-int HighScore =0;
+int Level =0;
+
 int hammer = 0, bag = 0, drag = 0;
 int sum_BDH = 5 ;
 int count_Player =0, count_AI=0;
 int frame =0;
-int Level = 0;
+int frameLose =0;
+int frameWin =0;
 
 
  // Khai báo biến cho nút "Start Game"
@@ -49,10 +50,9 @@ const int SumOfGoldTargets = 20;
 SDL_Rect SumTargets[SumOfGoldTargets];
 
 //Xoay nhân vật
-    bool isMoving; 
+bool isMoving; 
 //Test Va chạm
-    bool isTest;
-    bool CheckNextLevel;
+bool isTest;
 
 
 
@@ -124,6 +124,8 @@ class LTexture {
  LTexture Map1;
  LTexture BackGroundTexture;
  LTexture Boss1;
+ LTexture Map2;
+ LTexture MapFinal;
 
  LTexture Drag;
  LTexture Hammer;
@@ -428,6 +430,16 @@ bool init()
 		printf( "Failed to load Map texture!\n" );
 		return  false;
 	}
+    	if( !Map2.loadTexture( "C:/FirstGame/Picture/Map2.png" ) )
+	{
+		printf( "Failed to load Map texture!\n" );
+		return  false;
+	}
+    	if( !MapFinal.loadTexture( "C:/FirstGame/Picture/MapFinal.png" ) )
+	{
+		printf( "Failed to load Map texture!\n" );
+		return  false;
+	}
 
     if (!Boss1.loadTexture( "C:/FirstGame/Picture/Boss1.png") ) {
         printf( "Failed to load BOSS texture !\n" );
@@ -511,8 +523,20 @@ class Figure {
             return mPosY;
         }
 
+        // Setter function for mPosX
+        void setPosX(int x) {
+            mPosX = x;
+        }
+
+        // Setter function for mPosY
+        void setPosY(int y) {
+            mPosY = y;
+        }
+
+
         //CreateMazeObject
         void CreateMaze(int level);
+        void ClearMaze();
 
     private:
 		//The X and Y offsets of the dot
@@ -658,7 +682,7 @@ bool checkCollision_2Wall(SDL_Rect a, SDL_Rect b)
 }
 
 bool CheckBDH(int a, int b){
-  bool res = false;
+  bool res ;
   if (a == 1 and b == 2) {
     res = false;
   } else if (a == 1 and b == 3) {
@@ -755,10 +779,10 @@ void Figure::move()
 
     }
     
-//if (checkCollision(mFigure,WallOx,4) == true  or checkCollision(mFigure,WallOy,3) == true ){
+if (checkCollision(mFigure,WallOx,4) == true  or checkCollision(mFigure,WallOy,3) == true ){
   //score++;
-  
-//}
+  isTest = true;
+}
 
 }
 
@@ -825,6 +849,25 @@ void Figure::CreateMaze(int level) {
 
                     // Scroll background
                     --scrollingOffset;
+                    if (scrollingOffset < -Map2.getWidth()) {
+                        scrollingOffset = 0;
+                    }
+
+                    // Clear screen
+                    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+                    SDL_RenderClear(renderer);
+
+                    //Render background
+				    Map2.render_Map( scrollingOffset, 0 );
+				
+                     // Vẽ background tiếp theo để che phủ toàn bộ màn hình
+                    Map2.render_Map(scrollingOffset + Map2.getWidth(), 0);
+
+    } else {
+        if (level == 0) {
+
+               // Scroll background
+                    --scrollingOffset;
                     if (scrollingOffset < -Map1.getWidth()) {
                         scrollingOffset = 0;
                     }
@@ -838,16 +881,36 @@ void Figure::CreateMaze(int level) {
 				
                      // Vẽ background tiếp theo để che phủ toàn bộ màn hình
                     Map1.render_Map(scrollingOffset + Map1.getWidth(), 0);
+}
+if (level == 2){
+     const int scrollSpeed = 1; // Tốc độ di chuyển của MapFinal
+    static int totalScrollingOffset = 0; // Biến lưu tổng scrollingOffset
+    
+    // Tính toán scrollingOffset mới
+    totalScrollingOffset += scrollSpeed;
+    scrollingOffset = totalScrollingOffset % MapFinal.getWidth();
 
-    } else {
-        if (level == 0) {
-    SDL_SetRenderDrawColor(renderer, 135, 206, 235, 255); // đặt màu nền
-    SDL_RenderClear(renderer); // xóa màn hình và vẽ màu lên màn hình
-        }
+    // Clear screen
+    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_RenderClear(renderer);
+
+    //Render background
+    MapFinal.render_Map( scrollingOffset, 0 );
+
+    // Vẽ background tiếp theo để che phủ toàn bộ màn hình
+    MapFinal.render_Map(scrollingOffset + MapFinal.getWidth(), 0);
+
+}
 
     }
 }
+void Figure::ClearMaze() {
+    // Xóa màn hình bằng hàm SDL_RenderClear()
+    SDL_RenderClear(renderer);
 
+    // Cập nhật màn hình
+    SDL_RenderPresent(renderer);
+}
 void generateNewPoints(std::vector<SDL_Point>& points, int SumOfGoldTargets) {
     points.clear();
     for (int i = 0; i < SumOfGoldTargets ; i++) {
@@ -909,6 +972,8 @@ void close()
     Hammer.free();
 
     Map1.free();
+    Map2.free();
+    MapFinal.free();
     BackGroundTexture.free();
     for (int i=0; i<SumOfTargets;i++){
            TargetTexture[i].free();
@@ -924,7 +989,11 @@ void close()
 
 int main(int argc, char* argv[])
 {       
+                int score = 1;
+                int HighScore =1;
 
+
+bool CheckScore;
                              // Tạo một vector chứa các tọa độ ngẫu nhiên
                 std::vector<SDL_Point> points;
                
@@ -1009,42 +1078,60 @@ int main(int argc, char* argv[])
 
                 isTest = false;
                 bool quit1 = false;
-                Level = 1;
-                score = 0;
+                score = 1;
                 drag = 0;
                 hammer = 0;
                 bag = 0;
                 sum_BDH = 5;
+                count_AI =0;
+                count_Player =0;
+                Level =1;
                 generateNewPoints(points, SumOfGoldTargets);
-                
+                  
+
                 SDL_Event e1;
                 Figure figure;
     
                 while (!quit1) {
-            SDL_Rect Pos = { figure.getPosX(),figure.getPosY(), Figure_Size, Figure_Size};
-            SDL_Rect Boss = {0,SCREEN_HEIGHT - Figure_Size*2/3 ,Figure_Size*2/3,Figure_Size*2/3};
+                     
+                    // Di chuyển đối tượng figure
+                    figure.move();
 
-            SDL_Rect HAMMER = {SCREEN_WIDTH *5/8 , SCREEN_HEIGHT/2, Icon, Icon};
-            SDL_Rect BAG =    {SCREEN_WIDTH*5/8 , SCREEN_HEIGHT/2 - 2* Icon,Icon, Icon};
-            SDL_Rect DRAG = {SCREEN_WIDTH*5/8, SCREEN_HEIGHT /2 + 2*Icon, Icon, Icon};
+                    
+                    // Vẽ các texture
+                    
+                    SDL_Rect Pos = { figure.getPosX(),figure.getPosY(), Figure_Size, Figure_Size};
+                    SDL_Rect Boss = {-Figure_Size*1/4 - 10 ,SCREEN_HEIGHT - Figure_Size - 20 ,Figure_Size*3/2,Figure_Size*3/2};
 
-              //Render text
-            SDL_Color textColor = { 255, 255, 0 };
+                    SDL_Rect HAMMER = {SCREEN_WIDTH *5/8 , SCREEN_HEIGHT/2, Icon, Icon};
+                    SDL_Rect BAG =    {SCREEN_WIDTH*5/8 , SCREEN_HEIGHT/2 - 2* Icon,Icon, Icon};
+                    SDL_Rect DRAG = {SCREEN_WIDTH*5/8, SCREEN_HEIGHT /2 + 2*Icon, Icon, Icon};
 
-             
-            figure.move();
+                    SDL_Rect BossOne = {0,0,Figure_Size,Figure_Size};
+                    SDL_Rect BossTwo = {SCREEN_WIDTH/2,SCREEN_HEIGHT/2,Figure_Size,Figure_Size};
+                    SDL_Rect BossThree = {250,450,Figure_Size,Figure_Size};
 
+                      //Render text
+                    SDL_Color textColor = { 255, 255, 0 };
+                    std::string text = "SCORE : ";
+                    std::string myScore = std::to_string(score);
+
+                    text += myScore;
+                    if (!FontScore.loadFromRenderedText(text.c_str(), textColor))
+
+                    {
+                        printf( "Failed to render text texture!\n" );
+                    }
                     // Xử lý sự kiện
+
                     while (SDL_PollEvent(&e1) != 0) {
                      
                         if (e1.type == SDL_QUIT) {
                             quit1 = true;
+                            isTest = true;
                             if(HighScore <= score){
                                 HighScore = score;
                             }
-                            score =0;
-                            sum_BDH = 0;
-                            drag =0; hammer =0; bag =0;
                             
                         }
                         if (e1.type == SDL_KEYDOWN && e1.key.keysym.sym == SDLK_p)
@@ -1057,9 +1144,10 @@ int main(int argc, char* argv[])
                         figure.handleEvent(e1);
 
 
-                        if ( e1.type == SDL_MOUSEBUTTONDOWN && checkCollision_2Wall(Pos,Boss) ) {
+                        if ( e1.type == SDL_MOUSEBUTTONDOWN && checkCollision_2Wall(Pos,Boss) && Level == 1) {
                             int mouseX1 = e1.button.x;
                             int mouseY1 = e1.button.y;
+                          
                             SDL_GetMouseState(&mouseX1, &mouseY1);
 
                             Click.loadAudio("C:/FirstGame/Sound/Click.wav");
@@ -1068,21 +1156,22 @@ int main(int argc, char* argv[])
                             {
                                 hammer++;
                                 // 1 là búa 
-                                int CheckHammer = Random(1,3);
-                                if (CheckHammer == 1){
-                                    count_Player++;
-                                    count_AI++;
-                                } else {
-                                    if (CheckBDH(CheckHammer,1)){
+                                int CheckHammer = Random(2,3);
+                               
+                                    if (CheckBDH(1,CheckHammer) == 3 ){
                                         count_Player++;
                                         score += 5;
                                     } else {
                                         count_AI++;
-                                        score -=5;
+                                         if (score > 5){
+                                            score-=5;
+                                        } else {
+                                            score = 0;
+                                        }
                                     }
-                                }
 
                                 Click.playMusicOnce();
+                               
 
                                 
                             }
@@ -1092,20 +1181,26 @@ int main(int argc, char* argv[])
                                 // 2 là bao
                                                             
                                 int CheckBag = Random(1,3);
-                                if (CheckBag == 2){
-                                    count_Player++;
-                                    count_AI++;
-                                } else {
-                                    if (CheckBDH(CheckBag,2)){
+                               while (CheckBag == 2){
+                                CheckBag = Random(1,3);
+                               }
+                                
+                                    if (CheckBDH(2,CheckBag) == true ){
                                         count_Player++;
                                         score+=5;
                                     } else {
                                         count_AI++;
-                                        score-=5;
-                                    }
+                                        if (score > 5){
+                                            score-=5;
+                                        } else {
+                                            score = 0;
+                                        }
+                                        
+                                    
                                 }
 
                                 Click.playMusicOnce();
+                                 
                                 
                                 
                             }
@@ -1113,21 +1208,23 @@ int main(int argc, char* argv[])
                             {
                                 drag++;
                                 // 3 là kéo
-                                 int CheckDrag = Random(1,3);
-                                if (CheckDrag == 3){
-                                    count_Player++;
-                                    count_AI++;
-                                } else {
-                                    if (CheckBDH(CheckDrag,3)){
+                                 int CheckDrag = Random(1,2);
+                                
+                                    if (CheckBDH(3,CheckDrag) == true ){
                                         count_Player++;
                                         score+=5;
                                     } else {
                                         count_AI++;
-                                        score-=5;
-                                    }
+                                         if (score > 5){
+                                            score-=5;
+                                        } else {
+                                            score = 0;
+                                        }
+                                    
                                 }
 
                                 Click.playMusicOnce();
+                                
                             }
                             sum_BDH = 5 - drag - hammer - bag;
                             if (sum_BDH < 0){
@@ -1140,17 +1237,174 @@ int main(int argc, char* argv[])
                                     printf( "Failed to render text texture!\n" );
                                 }
                             }
-
+                            
+                              
+                        }  
+                         if ( e1.type == SDL_MOUSEBUTTONDOWN && Level == 2 ) {
+                            int mouseX1 = e1.button.x;
+                            int mouseY1 = e1.button.y;        
+                            SDL_GetMouseState(&mouseX1, &mouseY1);
+                            
+                            if (mouseX1 >= 0 && mouseX1 <= SCREEN_WIDTH && mouseY1 >= 0 && mouseY1 <= SCREEN_HEIGHT) {
+                                      if (mouseX1 >= BossOne.x && mouseX1 <= BossOne.x + BossOne.w && mouseY1 >= BossOne.y && mouseY1 <= BossOne.y + BossOne.h){
+                                        SDL_RenderCopy(renderer,Boss1.getTexture(),NULL,&BossOne);
+                                           score += 30;
+                                           if(checkCollision_2Wall(Pos,BossOne)  ){
+                                            isTest = true;
+                                           } 
+                                           
+                                        }
+                                        else if (mouseX1 >= BossTwo.x && mouseX1 <= BossTwo.x + BossTwo.w && mouseY1 >= BossTwo.y && mouseY1 <= BossTwo.y + BossTwo.h){
+                                        SDL_RenderCopy(renderer,Boss1.getTexture(),NULL,&BossTwo);
+                                        score +=30;
+                                        if(checkCollision_2Wall(Pos,BossTwo)  ){
+                                            isTest = true;
+                                           } 
+                                    }  else if (mouseX1 >= BossThree.x && mouseX1 <= BossThree.x + BossThree.w && mouseY1 >= BossThree.y && mouseY1 <= BossThree.y + BossThree.h){
+                                        SDL_RenderCopy(renderer,Boss1.getTexture(),NULL,&BossThree);
+                                        score +=30;
+                                        if(checkCollision_2Wall(Pos,BossThree)  ){
+                                            isTest = true;
+                                           } 
+                                    }
+                                    score -= 20;
+                                    if (score < 0 ){
+                                        score =0;
+                                    }
+                                        
+                                    FontScore.render_Map( SCREEN_WIDTH/2, 0 );
+                                    FontHighScore.render_Map( SCREEN_WIDTH/2 + Figure_Size, 0 );
+                                     SDL_RenderPresent(renderer);
+                                    
                         }
+
+                           
+                              
+                            
+                            }
 
                         
                     }
-            // Vẽ các texture
-            if (Level == 1){
-                figure.render();
-            // Di chuyển đối tượng figure
-                figure.CreateMaze(Level);
-                SDL_Rect TypeTargets[points.size()];   
+
+            
+    if ( Level == 1 ){
+          
+      
+//       BOSS FIGHT FIGURE       
+        SDL_Color black = {0x00, 0x00, 0x00};
+        std::string textBDH = "Remaining turns : ";
+
+        if(checkCollision_2Wall(Pos,Boss)  ) {
+            figure.CreateMaze(0);
+               	//Render current frame
+			FontScore.render_Map( SCREEN_WIDTH/2, 0 );
+            FontHighScore.render_Map( SCREEN_WIDTH/2 + Figure_Size, 0 );
+            if (score >= HighScore){
+                HighScore =score;
+            }
+           
+             SDL_RenderCopy(renderer,Hammer.getTexture(),NULL, &HAMMER);
+             SDL_RenderCopy(renderer,Bag.getTexture(),NULL, &BAG);
+             SDL_RenderCopy(renderer,Drag.getTexture(),NULL, &DRAG);
+
+            SDL_Rect Figure_Boss= {SCREEN_WIDTH * 3/4 , SCREEN_HEIGHT/2 , Figure_Size, Figure_Size};
+            SDL_Rect Boss_Figure = {SCREEN_WIDTH *1/4, SCREEN_HEIGHT/2 - Figure_Size , Figure_Size *3/2, Figure_Size*3/2};
+             // Render the sprite using the current frame
+            gSpriteSheetTexture.render( SCREEN_WIDTH * 3/4,  SCREEN_HEIGHT *2/5, &gSpriteClips[ currentFrame ] );
+            
+            SDL_RenderCopy(renderer,Boss1.getTexture(),NULL,&Boss_Figure);
+        
+             
+                    //Render text
+                        std::string Turns = std::to_string(sum_BDH);
+                        textBDH +=Turns ;
+            
+                        if (!FontBDH.loadFromRenderedText(textBDH.c_str(), black )) {
+                            printf( "Failed to render text texture!\n" );
+                        }
+                    //Render current frame
+                        FontBDH.render_Map( SCREEN_WIDTH/4, SCREEN_HEIGHT/2 - Figure_Size );
+
+                
+    if (sum_BDH == 0) {
+    SDL_RenderClear(renderer);
+    
+    FontScore.render_Map(SCREEN_WIDTH / 2, 0);
+    FontHighScore.render_Map(SCREEN_WIDTH /2 +Figure_Size,0);
+
+   if   (count_Player < count_AI ) {
+    Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
+        Uint32 elapsedTime = 0;
+        while (elapsedTime < 2500) {
+        elapsedTime = SDL_GetTicks() - startTime;
+        // Vẽ nội dung màn hình
+        SDL_RenderClear(renderer);
+        Map1.render(0,0);
+        std::string lose = "YOU LOSE ";
+        if (!YouLose.loadFromRenderedText(lose.c_str(), textColor)) {
+            printf("Failed to render text texture!\n");
+        }
+        FontScore.render_Map(SCREEN_WIDTH / 2, 0);
+        FontHighScore.render_Map(SCREEN_WIDTH /2 +Figure_Size,0);
+        YouLose.render_Map(SCREEN_WIDTH / 2 - Figure_Size/4, SCREEN_HEIGHT / 2);
+        
+       frameLose++;
+        gDeadSpriteTexture.render(SCREEN_WIDTH / 2 - Figure_Size/4 , SCREEN_HEIGHT/2 + 16 ,&gDeadSpriteClips[ frameLose/32 ]);
+
+        if (frameLose/32 >=4 ){
+            frameLose =0;
+        }
+
+        SDL_RenderPresent(renderer);
+    }
+    quit1 = true ;
+    break;
+}else{
+    while  (count_Player  > count_AI) {
+           
+        Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
+        Uint32 elapsedTime = 0;
+        while (elapsedTime < 2000) {
+        elapsedTime = SDL_GetTicks() - startTime;
+        // Vẽ nội dung màn hình
+        	SDL_RenderClear( renderer );
+            score+= 50;
+            
+        std::string win = "YOU WIN ";
+        if (!YouWin.loadFromRenderedText(win.c_str(), textColor)) {
+            printf("Failed to render text texture!\n");
+        }
+        Map2.render(0,0);
+        YouWin.render_Map(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+        FontScore.render_Map( SCREEN_WIDTH/2, 0 );
+        FontHighScore.render_Map( SCREEN_WIDTH/2 + Figure_Size, 0 );
+            if (score >= HighScore){
+                HighScore =score;
+            }
+        
+        frameWin++;
+        gWinSpriteTexture.render(SCREEN_WIDTH / 2, SCREEN_HEIGHT/2 + 16 ,&gWinSpriteClips[ frameWin/14 ]);
+        if (frameWin/14 >=7 ){
+            frameWin =0;
+        }
+        SDL_RenderPresent(renderer);
+        }
+       
+       CheckScore = true;
+        Level = 2;
+        break;      
+}
+
+
+} 
+    }
+        }
+        else {
+                           // Vẽ các đối tượng khác lên renderer
+                    figure.CreateMaze(1);
+                    figure.render();
+                   
+            SDL_Rect TypeTargets[points.size()];   
 
             for (int i = 0; i < points.size(); i++) {
 
@@ -1194,86 +1448,61 @@ int main(int argc, char* argv[])
             SDL_RenderPresent(renderer);
         }  
 
-	    std::string text = "SCORE : ";
-        std::string myScore = std::to_string(score);
+        
+	   // std::string text = "SCORE : ";
+        //std::string myScore = std::to_string(score);
 
-        text += myScore;
-        if (!FontScore.loadFromRenderedText(text.c_str(), textColor))
+        //text += myScore;
+        //if (!FontScore.loadFromRenderedText(text.c_str(), textColor))
 
-		{
-			printf( "Failed to render text texture!\n" );
-		}
+		//{
+		//	printf( "Failed to render text texture!\n" );
+		//}
                     	
-				FontScore.render_Map( SCREEN_WIDTH/2, 0 );
-
-          //Render text           
+				FontScore.render_Map( SCREEN_WIDTH/2, 0 );         
                 FontHighScore.render_Map( SCREEN_WIDTH/2 + Figure_Size, 0 );
                 
         SDL_RenderCopy(renderer,Boss1.getTexture(),NULL, &Boss);
-
-
-       
-      
-//       BOSS FIGHT FIGURE       
-        SDL_Color black = {0x00, 0x00, 0x00};
-        std::string textBDH = "Remaining turns : ";
-
-        if(checkCollision_2Wall(Pos,Boss)  ) {
-            figure.CreateMaze(0);
-               	//Render current frame
-			FontScore.render_Map( SCREEN_WIDTH/2, 0 );
-            FontHighScore.render_Map( SCREEN_WIDTH/2 + Figure_Size, 0 );
-            if (score >= HighScore){
-                HighScore =score;
+        }
+              
+              // Cập nhật renderer
+                    SDL_RenderPresent(renderer);
+                    } 
+                    
+         if ( Level == 2){
+            if (CheckScore){
+                 score = 100 + 5 *(count_Player - count_AI);;
+                 CheckScore = false;
             }
            
-             SDL_RenderCopy(renderer,Hammer.getTexture(),NULL, &HAMMER);
-             SDL_RenderCopy(renderer,Bag.getTexture(),NULL, &BAG);
-             SDL_RenderCopy(renderer,Drag.getTexture(),NULL, &DRAG);
-
-            SDL_Rect Figure_Boss= {SCREEN_WIDTH * 3/4 , SCREEN_HEIGHT/2 , Figure_Size, Figure_Size};
-            SDL_Rect Boss_Figure = {SCREEN_WIDTH *1/4, SCREEN_HEIGHT/2 , Figure_Size *2/3, Figure_Size*2/3};
-             // Render the sprite using the current frame
-            gSpriteSheetTexture.render( SCREEN_WIDTH * 3/4,  SCREEN_HEIGHT *2/5, &gSpriteClips[ currentFrame ] );
-            
-            SDL_RenderCopy(renderer,Boss1.getTexture(),NULL,&Boss_Figure);
-        
-             
-
-                    //Render text
-                        std::string Turns = std::to_string(sum_BDH);
-                        textBDH +=Turns ;
-            
-                        if (!FontBDH.loadFromRenderedText(textBDH.c_str(), black )) {
-                            printf( "Failed to render text texture!\n" );
-                        }
-                    //Render current frame
-                        FontBDH.render_Map( SCREEN_WIDTH/4, SCREEN_HEIGHT/2 - Figure_Size );
-        }
+            if (HighScore <=score ){
+                HighScore = score;
             }
-        else {
-             if (Level == 2){
+            
+               // SDL_RenderClear(renderer);
+               figure.CreateMaze(Level);
+                // Render the sprite using the current frame
                 figure.render();
-            // Di chuyển đối tượng figure
-            drag =0; hammer = 0; bag = 0;
-            sum_BDH = 5;
+                //gSpriteSheetTexture.render( figure.getPosX(), figure.getPosY(), &gSpriteClips[ currentFrame ] );
+             
+                FontScore.render_Map( SCREEN_WIDTH/2, 0 );
+                FontHighScore.render_Map( SCREEN_WIDTH/2 + Figure_Size, 0 );
+                
+                SDL_RenderPresent(renderer);
             }
-        }
-             // Vẽ các đối tượng khác lên renderer
+            
           
-    if (sum_BDH == 0) {
-    SDL_RenderClear(renderer);
-    FontScore.render_Map(SCREEN_WIDTH / 2, 0);
-    FontHighScore.render_Map(SCREEN_WIDTH /2 +Figure_Size,0);
-
-   while (count_Player + 5 < count_AI   ) {
-    Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
-    Uint32 elapsedTime = 0;
-    while (elapsedTime < 2000) {
+        while  (isTest == true ){
+        Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
+        Uint32 elapsedTime = 0;
+        while (elapsedTime < 2000) {
         elapsedTime = SDL_GetTicks() - startTime;
         // Vẽ nội dung màn hình
         SDL_RenderClear(renderer);
+        Map1.render(0,0);
         std::string lose = "YOU LOSE ";
+        FontScore.render_Map( SCREEN_WIDTH/2, 0 );
+        FontHighScore.render_Map( SCREEN_WIDTH/2 + Figure_Size, 0 );
         if (!YouLose.loadFromRenderedText(lose.c_str(), textColor)) {
             printf("Failed to render text texture!\n");
         }
@@ -1288,43 +1517,16 @@ int main(int argc, char* argv[])
 
         SDL_RenderPresent(renderer);
     }
-    quit1 = true;
+    quit1 = true ;
     break;
-}
-
-    if (count_Player + 5 > count_AI) {
-         Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
-        Uint32 elapsedTime = 0;
-        while (elapsedTime < 2000) {
-        elapsedTime = SDL_GetTicks() - startTime;
-        // Vẽ nội dung màn hình
-        SDL_RenderClear(renderer);
-        std::string win = "YOU WIN ";
-        if (!YouWin.loadFromRenderedText(win.c_str(), textColor)) {
-            printf("Failed to render text texture!\n");
-        }
-        YouWin.render_Map(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
-       
-        frame++;
-        
-        gWinSpriteTexture.render(SCREEN_WIDTH / 2, SCREEN_HEIGHT/2 + 16 ,&gWinSpriteClips[ frame/7 ]);
-        if (frame/7 >=7 ){
-            frame =0;
-        }
-        SDL_RenderPresent(renderer);
-        }
-        Level++;
-        isTest = false;
-        break;  
-}     
-
-        }
-       
-         // Cập nhật renderer
-        SDL_RenderPresent(renderer);
-                                    
-                       
+    }
+    if (score <= 0 ){
+    isTest = true;
+                } 
+         
                 }
+
+              
                 
              }  
 

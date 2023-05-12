@@ -65,7 +65,9 @@
 
 - 6. Thêm Nút Reset lại game để người chơi có trải nghiệm đầy đủ hơn.
 
-- 7. Tách  chương trình chính ra thành các File Header cho người đọc dễ hiểu hơn  và tối ưu các Code hiện tại để chương trình được tối ưu hơn .
+- 7. Tách thêm  chương trình chính  ra thành nhiều File Header hơn  cho người đọc dễ hiểu hơn  và tối ưu các Code hiện tại để chương trình được tối ưu hơn .
+
+- 8. Tạo ra các thử thách mới để game thêm trải nghiệm cho mọi người "(Cần thời gian)".
 
 ## Các kĩ thuật được sử dụng:
 - Sử dụng thư viện SDL, SDL_image, SDL_ttf, SDL_mixer.
