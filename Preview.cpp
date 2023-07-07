@@ -25,9 +25,9 @@ const int SumOfTargets = 4;
 int Level =0;
 
 
-int hammer = 0, bag = 0, drag = 0;
-int sum_BDH = 5 ;
-int count_Player =0, count_AI=0;
+int hammer , bag , drag;
+int sum_BDH ;
+int count_Player , count_AI;
 
 
 int frame =0;
@@ -58,9 +58,6 @@ SDL_Rect gSpriteClips[ WALKING_ANIMATION_FRAMES ];
 SDL_Rect gDeadSpriteClips[WALKING_ANIMATION_FRAMES/2 ];
 SDL_Rect gWinSpriteClips[7];
 SDL_Rect gBossSpriteClips[4];
-
-
-SDL_Rect SumTargets[SumOfGoldTargets];
 
 //Xoay nhân vật
 bool isMoving; 
@@ -100,10 +97,7 @@ class LTexture {
 		void render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
 
         void render_Map(  int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
-        void renderBackground();
-        void renderMenuStart();
-        void renderMenuExit();
-        void renderTargets(SDL_Rect *Targets);
+        void Render_Box(SDL_Rect *Box);
 
         void close();
 
@@ -138,6 +132,10 @@ class LTexture {
  LTexture Boss2;
  LTexture Boss3;
  LTexture Boss4;
+ LTexture Fire1;
+ LTexture Fire2;
+ LTexture Fire3;
+ LTexture Fire4;
  LTexture Map2;
  LTexture MapFinal;
 
@@ -327,26 +325,10 @@ void LTexture::render_Map( int x, int y, SDL_Rect* clip, double angle, SDL_Point
 }
 
 
-void LTexture::renderBackground(){
-    SDL_RenderCopy(renderer, mTexture, NULL,NULL);
-}
 
-
-void LTexture::renderMenuStart(){
-        // Hiển thị các nút menu
-        SDL_RenderCopy(renderer, mTexture, NULL, &startButtonRect);
-}
-
-
-void LTexture::renderMenuExit(){
-             SDL_RenderCopy(renderer, mTexture, NULL, &exitButtonRect);
-
-}
-
-
-void LTexture::renderTargets(SDL_Rect* Targets) {
+void LTexture::Render_Box(SDL_Rect* Box) {
         // sử dụng kích thước mặc định của texture để vẽ
-        SDL_RenderCopy(renderer, mTexture, NULL, Targets);
+        SDL_RenderCopy(renderer, mTexture, NULL, Box );
 }
 
 
@@ -512,6 +494,26 @@ bool init()
 
 
     if (!Boss4.loadTexture( "C:/FirstGame/Picture/4.png") ) {
+        printf( "Failed to load BOSS texture !\n" );
+        return false;
+    }
+
+     if (!Fire1.loadTexture( "C:/FirstGame/Picture/Fire1.png") ) {
+        printf( "Failed to load BOSS texture !\n" );
+        return false;
+    }
+
+    if (!Fire2.loadTexture( "C:/FirstGame/Picture/Fire2.png") ) {
+        printf( "Failed to load BOSS texture !\n" );
+        return false;
+    }
+
+    if (!Fire3.loadTexture( "C:/FirstGame/Picture/Fire3.png") ) {
+        printf( "Failed to load BOSS texture !\n" );
+        return false;
+    }
+
+    if (!Fire4.loadTexture( "C:/FirstGame/Picture/Fire4.png") ) {
         printf( "Failed to load BOSS texture !\n" );
         return false;
     }
@@ -809,36 +811,80 @@ bool checkCollision(SDL_Rect a, SDL_Rect b[], int numWalls)
 
     // If we get here, there is no collision
     return false;
+} 
+/* bool checkCollision(SDL_Rect a, SDL_Rect b[], int numWalls)
+{      
+    for (int i = 0; i < numWalls; i++)
+    {
+        SDL_Rect currentWall = b[i];
+
+        // Calculate the sides of rect A
+        int leftA = a.x;
+        int rightA = a.x + a.w;
+        int topA = a.y;
+        int bottomA = a.y + a.h;
+
+        // Calculate the sides of rect B
+        int leftB = currentWall.x;
+        int rightB = currentWall.x + currentWall.w;
+        int topB = currentWall.y;
+        int bottomB = currentWall.y + currentWall.h;
+
+        // Check for collision
+        if ((leftA > leftB && leftA < rightB) &&
+            ((topA > topB && topA < bottomB) ||
+             (bottomA > topB && bottomA < bottomB)) ||
+            (rightA > leftB && rightA < rightB) &&
+            ((topA > topB && topA < bottomB) ||
+             (bottomA > topB && bottomA < bottomB)) ||
+            (leftB > leftA && leftB < rightA) &&
+            ((topB > topA && topB < bottomA) ||
+             (bottomB > topA && bottomB < bottomA)) ||
+            (rightB > leftA && rightB < rightA) &&
+            ((topB > topA && topB < bottomA) ||
+             (bottomB > topA && bottomB < bottomA)) ||
+            (topA == topB && rightA == rightB && bottomA == bottomB))
+        {
+            return true; // Collision detected
+        }
+    }
+
+    // If we get here, there is no collision
+    return false;
 }
+*/
 
 
 void Figure::CreateMaze(int level) {
 
       // Tạo tường thẳng đứng
         SDL_Rect WallOy[3];
-        WallOy[0] = {SCREEN_WIDTH / 6 - 4 , SCREEN_HEIGHT / 4, 1, SCREEN_HEIGHT  / 4};
-        WallOy[1] = {SCREEN_WIDTH / 3, 0, 1, (SCREEN_HEIGHT -64) / 2};
-        WallOy[2] = {SCREEN_WIDTH * 3 / 4, SCREEN_HEIGHT / 4 - 29, 1, SCREEN_HEIGHT / 2 + 30};
+        WallOy[0] = {SCREEN_WIDTH / 6 - 4 , SCREEN_HEIGHT / 4, 5, SCREEN_HEIGHT  / 4};
+        WallOy[1] = {SCREEN_WIDTH / 3, 0, 5, (SCREEN_HEIGHT -64) / 2};
+        WallOy[2] = {SCREEN_WIDTH * 3 / 4, SCREEN_HEIGHT / 4 - 29, 5, SCREEN_HEIGHT / 2 + 30};
 
 
         // Tao đường thẳng nằm ngang
         SDL_Rect WallOx[4];
-        WallOx[0] = {0, SCREEN_HEIGHT / 4, SCREEN_HEIGHT / 6 + 45, 1};
-        WallOx[1] = {  64 + SCREEN_WIDTH / 4, SCREEN_HEIGHT / 8 +50 , SCREEN_WIDTH / 6, 1};
-        WallOx[2] = {SCREEN_WIDTH * 7 / 10, SCREEN_HEIGHT / 5, SCREEN_HEIGHT / 6, 1};
-        WallOx[3] = {0, SCREEN_HEIGHT * 3 / 4, SCREEN_WIDTH * 3 / 4 + 45, 1};
+        WallOx[0] = {0, SCREEN_HEIGHT / 4, SCREEN_HEIGHT / 6 + 45, 5};
+        WallOx[1] = {  64 + SCREEN_WIDTH / 4, SCREEN_HEIGHT / 8 +50 , SCREEN_WIDTH / 6, 5};
+        WallOx[2] = {SCREEN_WIDTH * 7 / 10, SCREEN_HEIGHT / 5, SCREEN_HEIGHT / 6, 5};
+        WallOx[3] = {0, SCREEN_HEIGHT * 3 / 4, SCREEN_WIDTH * 3 / 4 + 45, 5};
 
 
     if (level == 1) {
         
         // Đặt màu 
-        SDL_SetRenderDrawColor(renderer, 135, 206, 235, 255);
+       // SDL_SetRenderDrawColor(renderer, 135, 206, 235, 255);
 
         for (int i = 0; i < 3; i++) {
-            SDL_RenderDrawRect(renderer, &WallOy[i]);
-            SDL_RenderDrawRect(renderer, &WallOx[i]);
+            Map1.Render_Box(&WallOy[i]);
+            Map1.Render_Box(&WallOx[i]);
+            // SDL_RenderDrawRect(renderer, &WallOy[i]);
+            //SDL_RenderDrawRect(renderer, &WallOx[i]);
         }
-            SDL_RenderDrawRect(renderer, &WallOx[3]);
+           // SDL_RenderDrawRect(renderer, &WallOx[3]);
+           Map1.Render_Box(&WallOx[3]);
 
         // Đặt lại màu vẽ ban đầu
         //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -903,10 +949,10 @@ void Figure::CreateMaze(int level) {
         }
 
     }
-        if (checkCollision(mFigure,WallOx,4) == true  or checkCollision(mFigure,WallOy,3) == true ){
-                //score++;
-                isTest = true;
-        }
+    if (checkCollision(mFigure,WallOx,4) == true  or checkCollision(mFigure,WallOy,3) == true ){
+                
+               isTest = true;
+      }
 
 }
     
@@ -996,7 +1042,7 @@ SDL_Point randomPoint() {
 
 
 void generateNewPoints(std::vector<SDL_Point>& points, int SumOfGoldTargets) {
-    points.clear();
+    points.clear(); //clear all
     for (int i = 0; i < SumOfGoldTargets ; i++) {
 
         SDL_Point point = randomPoint();
@@ -1054,6 +1100,10 @@ void close()
     Boss2.free();
     Boss3.free();
     Boss4.free();
+    Fire1.free();
+    Fire2.free();
+    Fire3.free();
+    Fire4.free();
     Bag.free();
     Drag.free();
     Hammer.free();
@@ -1184,8 +1234,9 @@ int main(int argc, char* argv[])
                     
                         // Vẽ các texture
                         
-                        SDL_Rect Pos = { figure.getPosX()  ,figure.getPosY() + 64  , Figure_Size/2, Figure_Size/2};
+                        SDL_Rect Pos = { figure.getPosX()   ,figure.getPosY()   , 56, Figure_Size};
                         SDL_Rect Boss = {-Figure_Size*1/4 - 10 ,SCREEN_HEIGHT - Figure_Size - 20 ,Figure_Size*3/2,Figure_Size*3/2};
+                        SDL_Rect Fire_Level1 = {-Figure_Size*1/4 - 10 + 128 ,SCREEN_HEIGHT - Figure_Size - 20 +45 ,Figure_Size,Figure_Size};
 
                         SDL_Rect HAMMER = {SCREEN_WIDTH *5/8 , SCREEN_HEIGHT/2, Icon, Icon};
                         SDL_Rect BAG =    {SCREEN_WIDTH*5/8 , SCREEN_HEIGHT/2 - 2* Icon,Icon, Icon};
@@ -1365,7 +1416,50 @@ int main(int argc, char* argv[])
 
             
     if ( Level == 1 ){
-                    
+       // Tạo tường thẳng đứng
+        SDL_Rect WallOy[3];
+        WallOy[0] = {SCREEN_WIDTH / 6 - 4 , SCREEN_HEIGHT / 4, 5, SCREEN_HEIGHT  / 4};
+        WallOy[1] = {SCREEN_WIDTH / 3, 0, 5, (SCREEN_HEIGHT -64) / 2};
+        WallOy[2] = {SCREEN_WIDTH * 3 / 4, SCREEN_HEIGHT / 4 - 29, 5, SCREEN_HEIGHT / 2 + 30};
+
+
+        // Tao đường thẳng nằm ngang
+        SDL_Rect WallOx[4];
+        WallOx[0] = {0, SCREEN_HEIGHT / 4, SCREEN_HEIGHT / 6 + 45, 5};
+        WallOx[1] = {  64 + SCREEN_WIDTH / 4, SCREEN_HEIGHT / 8 +50 , SCREEN_WIDTH / 6, 5};
+        WallOx[2] = {SCREEN_WIDTH * 7 / 10, SCREEN_HEIGHT / 5, SCREEN_HEIGHT / 6, 5};
+        WallOx[3] = {0, SCREEN_HEIGHT * 3 / 4, SCREEN_WIDTH * 3 / 4 + 45, 5}; 
+
+         for (int i = 0; i < 3; i++) {
+            Map1.Render_Box(&WallOy[i]);
+            Map1.Render_Box(&WallOx[i]);
+            // SDL_RenderDrawRect(renderer, &WallOy[i]);
+            //SDL_RenderDrawRect(renderer, &WallOx[i]);
+        }
+           // SDL_RenderDrawRect(renderer, &WallOx[3]);
+           Map1.Render_Box(&WallOx[3]);
+
+        // Đặt lại màu vẽ ban đầu
+        //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        
+         SDL_RenderPresent(renderer);
+
+        // Scroll background
+            scrollingOffset--;
+        if (scrollingOffset < -Map2.getWidth()) {
+            scrollingOffset = 0;
+        }
+
+        // Clear screen
+        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_RenderClear(renderer);
+
+        //Render background
+        Map2.render_Map( scrollingOffset, 0 );
+    
+            // Vẽ background tiếp theo để che phủ toàn bộ màn hình
+        Map2.render_Map(scrollingOffset + Map2.getWidth(), 0);
+
         SDL_Color black = {0x00, 0x00, 0x00};
         std::string textBDH = "Remaining turns : ";
 
@@ -1384,8 +1478,9 @@ int main(int argc, char* argv[])
              SDL_RenderCopy(renderer,Bag.getTexture(),NULL, &BAG);
              SDL_RenderCopy(renderer,Drag.getTexture(),NULL, &DRAG);
 
-            SDL_Rect Figure_Boss= {SCREEN_WIDTH * 3/4 , SCREEN_HEIGHT/2 , Figure_Size, Figure_Size};
-            SDL_Rect Boss_Figure = {SCREEN_WIDTH *1/4, SCREEN_HEIGHT/2 - Figure_Size , Figure_Size *3/2, Figure_Size*3/2};
+            //SDL_Rect Figure_Boss= {SCREEN_WIDTH * 3/4 , SCREEN_HEIGHT/2 , Figure_Size, Figure_Size};
+            SDL_Rect Boss_Figure = {SCREEN_WIDTH *1/4   , SCREEN_HEIGHT/2 - Figure_Size + 35 , Figure_Size *3/2, Figure_Size*3/2};
+            SDL_Rect Fire = {SCREEN_WIDTH *1/4 + 128   , SCREEN_HEIGHT/2 - Figure_Size + 80 , Figure_Size, Figure_Size};
 
              // Render the sprite using the current frame
             gSpriteSheetTexture.render( SCREEN_WIDTH * 3/4,  SCREEN_HEIGHT *2/5, &gSpriteClips[ currentFrame ] );
@@ -1401,12 +1496,16 @@ int main(int argc, char* argv[])
             }
                     if (frameBoss %4 == 1){
                 SDL_RenderCopy(renderer,Boss1.getTexture(),NULL,&Boss_Figure);
+                SDL_RenderCopy(renderer,Fire1.getTexture(),NULL,&Fire);
             } else if (frameBoss %4 == 2){
                 SDL_RenderCopy(renderer,Boss2.getTexture(),NULL,&Boss_Figure);
+                SDL_RenderCopy(renderer,Fire2.getTexture(),NULL,&Fire);
             } else if (frameBoss %4 == 3){
                 SDL_RenderCopy(renderer,Boss3.getTexture(),NULL,&Boss_Figure);
+                SDL_RenderCopy(renderer,Fire3.getTexture(),NULL,&Fire);
             } else if (frameBoss %4 == 0){
                 SDL_RenderCopy(renderer,Boss4.getTexture(),NULL,&Boss_Figure);
+                SDL_RenderCopy(renderer,Fire4.getTexture(),NULL,&Fire);
             }
             //SDL_RenderCopy(renderer,Boss1.getTexture(),NULL,&Boss_Figure);
            
@@ -1429,7 +1528,7 @@ int main(int argc, char* argv[])
             FontScore.render_Map(SCREEN_WIDTH / 2, 0);
             FontHighScore.render_Map(SCREEN_WIDTH /2 +Figure_Size,0);
 
-            if(count_Player  +6 < count_AI ) {
+            if(count_Player     < count_AI ) {
 
                 Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
                 Uint32 elapsedTime = 0;
@@ -1463,7 +1562,7 @@ int main(int argc, char* argv[])
 
         }
         else{
-            while  (count_Player + 6  > count_AI) {
+            while  (count_Player   > count_AI) {
                 
                 Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
                 Uint32 elapsedTime = 0;
@@ -1507,25 +1606,28 @@ int main(int argc, char* argv[])
     }
         else {
             // Vẽ các đối tượng khác lên renderer
-            figure.CreateMaze(1);
+           
             figure.render();
                    
-            SDL_Rect TypeTargets[points.size()];   
+            SDL_Rect TypeTargets[points.size()];
+            SDL_Rect TypeTargets1[points.size()];    
 
             for (int i = 0; i < points.size(); i++) {
 
             TypeTargets[i] = {points[i].x, points[i].y, ICON_SIZE*4/5, ICON_SIZE*4/5};
+            TypeTargets1[i] = {points[i].x, points[i].y, ICON_SIZE/4, ICON_SIZE/4};
+
 
             SDL_RenderCopy(renderer, TargetTexture[2].getTexture(), NULL, &TypeTargets[i]);
             }
 
-            int hitIndex = checkCollision1(Pos, TypeTargets, points.size());
+            int hitIndex = checkCollision1(Pos, TypeTargets1, points.size());
              Ting.loadAudio("C:/FirstGame/Sound/Ting.wav");
 
              if (hitIndex >= 0)
               {  // Có va chạm
            
-                if (checkCollision_2Wall(Pos,TypeTargets[hitIndex])){
+                if (checkCollision_2Wall(Pos,TypeTargets1[hitIndex])){
                     Ting.playMusicOnce();
                 } 
 
@@ -1579,12 +1681,16 @@ int main(int argc, char* argv[])
         }
         if (frameBoss %4 == 1){
         SDL_RenderCopy(renderer,Boss1.getTexture(),NULL,&Boss);
+        SDL_RenderCopy(renderer,Fire2.getTexture(),NULL,&Fire_Level1);
         } else if (frameBoss %4 == 2){
             SDL_RenderCopy(renderer,Boss2.getTexture(),NULL,&Boss);
+            SDL_RenderCopy(renderer,Fire3.getTexture(),NULL,&Fire_Level1);
         } else if (frameBoss %4 == 3){
             SDL_RenderCopy(renderer,Boss3.getTexture(),NULL,&Boss);
+             SDL_RenderCopy(renderer,Fire4.getTexture(),NULL,&Fire_Level1);
         } else if (frameBoss %4 == 0){
             SDL_RenderCopy(renderer,Boss4.getTexture(),NULL,&Boss);
+             SDL_RenderCopy(renderer,Fire1.getTexture(),NULL,&Fire_Level1);
         }
         
         } 
@@ -1676,9 +1782,9 @@ int main(int argc, char* argv[])
         }
         //Clear screen
         SDL_RenderClear(renderer);
-        BackGroundTexture.renderBackground();
-        MenuStartTexture.renderMenuStart();
-        MenuExitTexture.renderMenuExit();
+        BackGroundTexture.Render_Box(NULL);
+        MenuStartTexture.Render_Box(&startButtonRect);
+        MenuExitTexture.Render_Box(&exitButtonRect);
    
         //Update screen
         SDL_RenderPresent(renderer);

@@ -138,6 +138,10 @@ class LTexture {
  LTexture Boss2;
  LTexture Boss3;
  LTexture Boss4;
+ LTexture Fire1;
+ LTexture Fire2;
+ LTexture Fire3;
+ LTexture Fire4;
  LTexture Map2;
  LTexture MapFinal;
 
@@ -512,6 +516,26 @@ bool init()
 
 
     if (!Boss4.loadTexture( "C:/FirstGame/Picture/4.png") ) {
+        printf( "Failed to load BOSS texture !\n" );
+        return false;
+    }
+
+     if (!Fire1.loadTexture( "C:/FirstGame/Picture/Fire1.png") ) {
+        printf( "Failed to load BOSS texture !\n" );
+        return false;
+    }
+
+    if (!Fire2.loadTexture( "C:/FirstGame/Picture/Fire2.png") ) {
+        printf( "Failed to load BOSS texture !\n" );
+        return false;
+    }
+
+    if (!Fire3.loadTexture( "C:/FirstGame/Picture/Fire3.png") ) {
+        printf( "Failed to load BOSS texture !\n" );
+        return false;
+    }
+
+    if (!Fire4.loadTexture( "C:/FirstGame/Picture/Fire4.png") ) {
         printf( "Failed to load BOSS texture !\n" );
         return false;
     }
@@ -903,10 +927,10 @@ void Figure::CreateMaze(int level) {
         }
 
     }
-        if (checkCollision(mFigure,WallOx,4) == true  or checkCollision(mFigure,WallOy,3) == true ){
+        //if (checkCollision(mFigure,WallOx,4) == true  or checkCollision(mFigure,WallOy,3) == true ){
                 //score++;
-                isTest = true;
-       }
+            //    isTest = true;
+       //}
 
 }
     
@@ -1054,6 +1078,10 @@ void close()
     Boss2.free();
     Boss3.free();
     Boss4.free();
+    Fire1.free();
+    Fire2.free();
+    Fire3.free();
+    Fire4.free();
     Bag.free();
     Drag.free();
     Hammer.free();
@@ -1160,7 +1188,7 @@ int main(int argc, char* argv[])
 
                     isTest = false;
                     bool quit1 = false;
-                    score = 0;
+                    score = 100;
                     drag = 0;
                     hammer = 0;
                     bag = 0;
@@ -1184,8 +1212,9 @@ int main(int argc, char* argv[])
                     
                         // Vẽ các texture
                         
-                        SDL_Rect Pos = { figure.getPosX()  ,figure.getPosY() + 64  , Figure_Size/2, Figure_Size/2};
+                        SDL_Rect Pos = { figure.getPosX()   ,figure.getPosY()   , 56, Figure_Size};
                         SDL_Rect Boss = {-Figure_Size*1/4 - 10 ,SCREEN_HEIGHT - Figure_Size - 20 ,Figure_Size*3/2,Figure_Size*3/2};
+                        SDL_Rect Fire_Level1 = {-Figure_Size*1/4 - 10 + 128 ,SCREEN_HEIGHT - Figure_Size - 20 +45 ,Figure_Size,Figure_Size};
 
                         SDL_Rect HAMMER = {SCREEN_WIDTH *5/8 , SCREEN_HEIGHT/2, Icon, Icon};
                         SDL_Rect BAG =    {SCREEN_WIDTH*5/8 , SCREEN_HEIGHT/2 - 2* Icon,Icon, Icon};
@@ -1384,8 +1413,9 @@ int main(int argc, char* argv[])
              SDL_RenderCopy(renderer,Bag.getTexture(),NULL, &BAG);
              SDL_RenderCopy(renderer,Drag.getTexture(),NULL, &DRAG);
 
-            SDL_Rect Figure_Boss= {SCREEN_WIDTH * 3/4 , SCREEN_HEIGHT/2 , Figure_Size, Figure_Size};
-            SDL_Rect Boss_Figure = {SCREEN_WIDTH *1/4, SCREEN_HEIGHT/2 - Figure_Size , Figure_Size *3/2, Figure_Size*3/2};
+            //SDL_Rect Figure_Boss= {SCREEN_WIDTH * 3/4 , SCREEN_HEIGHT/2 , Figure_Size, Figure_Size};
+            SDL_Rect Boss_Figure = {SCREEN_WIDTH *1/4   , SCREEN_HEIGHT/2 - Figure_Size + 35 , Figure_Size *3/2, Figure_Size*3/2};
+            SDL_Rect Fire = {SCREEN_WIDTH *1/4 + 128   , SCREEN_HEIGHT/2 - Figure_Size + 80 , Figure_Size, Figure_Size};
 
              // Render the sprite using the current frame
             gSpriteSheetTexture.render( SCREEN_WIDTH * 3/4,  SCREEN_HEIGHT *2/5, &gSpriteClips[ currentFrame ] );
@@ -1401,12 +1431,16 @@ int main(int argc, char* argv[])
             }
                     if (frameBoss %4 == 1){
                 SDL_RenderCopy(renderer,Boss1.getTexture(),NULL,&Boss_Figure);
+                SDL_RenderCopy(renderer,Fire1.getTexture(),NULL,&Fire);
             } else if (frameBoss %4 == 2){
                 SDL_RenderCopy(renderer,Boss2.getTexture(),NULL,&Boss_Figure);
+                SDL_RenderCopy(renderer,Fire2.getTexture(),NULL,&Fire);
             } else if (frameBoss %4 == 3){
                 SDL_RenderCopy(renderer,Boss3.getTexture(),NULL,&Boss_Figure);
+                SDL_RenderCopy(renderer,Fire3.getTexture(),NULL,&Fire);
             } else if (frameBoss %4 == 0){
                 SDL_RenderCopy(renderer,Boss4.getTexture(),NULL,&Boss_Figure);
+                SDL_RenderCopy(renderer,Fire4.getTexture(),NULL,&Fire);
             }
             //SDL_RenderCopy(renderer,Boss1.getTexture(),NULL,&Boss_Figure);
            
@@ -1429,7 +1463,7 @@ int main(int argc, char* argv[])
             FontScore.render_Map(SCREEN_WIDTH / 2, 0);
             FontHighScore.render_Map(SCREEN_WIDTH /2 +Figure_Size,0);
 
-            if(count_Player   < count_AI ) {
+            if(count_Player + 6   < count_AI ) {
 
                 Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
                 Uint32 elapsedTime = 0;
@@ -1463,7 +1497,7 @@ int main(int argc, char* argv[])
 
         }
         else{
-            while  (count_Player   > count_AI) {
+            while  (count_Player + 6   > count_AI) {
                 
                 Uint32 startTime = SDL_GetTicks(); // Lấy thời gian bắt đầu
                 Uint32 elapsedTime = 0;
@@ -1510,22 +1544,25 @@ int main(int argc, char* argv[])
             figure.CreateMaze(1);
             figure.render();
                    
-            SDL_Rect TypeTargets[points.size()];   
+            SDL_Rect TypeTargets[points.size()];
+            SDL_Rect TypeTargets1[points.size()];    
 
             for (int i = 0; i < points.size(); i++) {
 
             TypeTargets[i] = {points[i].x, points[i].y, ICON_SIZE*4/5, ICON_SIZE*4/5};
+            TypeTargets1[i] = {points[i].x, points[i].y, ICON_SIZE/4, ICON_SIZE/4};
+
 
             SDL_RenderCopy(renderer, TargetTexture[2].getTexture(), NULL, &TypeTargets[i]);
             }
 
-            int hitIndex = checkCollision1(Pos, TypeTargets, points.size());
+            int hitIndex = checkCollision1(Pos, TypeTargets1, points.size());
              Ting.loadAudio("C:/FirstGame/Sound/Ting.wav");
 
              if (hitIndex >= 0)
               {  // Có va chạm
            
-                if (checkCollision_2Wall(Pos,TypeTargets[hitIndex])){
+                if (checkCollision_2Wall(Pos,TypeTargets1[hitIndex])){
                     Ting.playMusicOnce();
                 } 
 
@@ -1579,12 +1616,16 @@ int main(int argc, char* argv[])
         }
         if (frameBoss %4 == 1){
         SDL_RenderCopy(renderer,Boss1.getTexture(),NULL,&Boss);
+        SDL_RenderCopy(renderer,Fire2.getTexture(),NULL,&Fire_Level1);
         } else if (frameBoss %4 == 2){
             SDL_RenderCopy(renderer,Boss2.getTexture(),NULL,&Boss);
+            SDL_RenderCopy(renderer,Fire3.getTexture(),NULL,&Fire_Level1);
         } else if (frameBoss %4 == 3){
             SDL_RenderCopy(renderer,Boss3.getTexture(),NULL,&Boss);
+             SDL_RenderCopy(renderer,Fire4.getTexture(),NULL,&Fire_Level1);
         } else if (frameBoss %4 == 0){
             SDL_RenderCopy(renderer,Boss4.getTexture(),NULL,&Boss);
+             SDL_RenderCopy(renderer,Fire1.getTexture(),NULL,&Fire_Level1);
         }
         
         } 
