@@ -1416,49 +1416,7 @@ int main(int argc, char* argv[])
 
             
     if ( Level == 1 ){
-       // Tạo tường thẳng đứng
-        SDL_Rect WallOy[3];
-        WallOy[0] = {SCREEN_WIDTH / 6 - 4 , SCREEN_HEIGHT / 4, 5, SCREEN_HEIGHT  / 4};
-        WallOy[1] = {SCREEN_WIDTH / 3, 0, 5, (SCREEN_HEIGHT -64) / 2};
-        WallOy[2] = {SCREEN_WIDTH * 3 / 4, SCREEN_HEIGHT / 4 - 29, 5, SCREEN_HEIGHT / 2 + 30};
-
-
-        // Tao đường thẳng nằm ngang
-        SDL_Rect WallOx[4];
-        WallOx[0] = {0, SCREEN_HEIGHT / 4, SCREEN_HEIGHT / 6 + 45, 5};
-        WallOx[1] = {  64 + SCREEN_WIDTH / 4, SCREEN_HEIGHT / 8 +50 , SCREEN_WIDTH / 6, 5};
-        WallOx[2] = {SCREEN_WIDTH * 7 / 10, SCREEN_HEIGHT / 5, SCREEN_HEIGHT / 6, 5};
-        WallOx[3] = {0, SCREEN_HEIGHT * 3 / 4, SCREEN_WIDTH * 3 / 4 + 45, 5}; 
-
-         for (int i = 0; i < 3; i++) {
-            Map1.Render_Box(&WallOy[i]);
-            Map1.Render_Box(&WallOx[i]);
-            // SDL_RenderDrawRect(renderer, &WallOy[i]);
-            //SDL_RenderDrawRect(renderer, &WallOx[i]);
-        }
-           // SDL_RenderDrawRect(renderer, &WallOx[3]);
-           Map1.Render_Box(&WallOx[3]);
-
-        // Đặt lại màu vẽ ban đầu
-        //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        
-         SDL_RenderPresent(renderer);
-
-        // Scroll background
-            scrollingOffset--;
-        if (scrollingOffset < -Map2.getWidth()) {
-            scrollingOffset = 0;
-        }
-
-        // Clear screen
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderClear(renderer);
-
-        //Render background
-        Map2.render_Map( scrollingOffset, 0 );
-    
-            // Vẽ background tiếp theo để che phủ toàn bộ màn hình
-        Map2.render_Map(scrollingOffset + Map2.getWidth(), 0);
+      figure.CreateMaze(1);
 
         SDL_Color black = {0x00, 0x00, 0x00};
         std::string textBDH = "Remaining turns : ";
